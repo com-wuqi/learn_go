@@ -117,5 +117,6 @@ func Learngo2() {
 	// 每个字符切开
 	fmt.Println(strings.Split(v12, "...")) // [11.12.13.14]
 	// 一个没切，做为一个元素
+	// // //
 
 }
