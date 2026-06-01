@@ -69,5 +69,7 @@ func main() {
 	fmt.Println(swap("hello", "world"))
 	utils.Learngo1()
 	utils.Learngo2()
+	utils.LearnGo2()
+	utils.Learngo3()
 
 }

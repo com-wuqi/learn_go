@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -119,4 +120,26 @@ func Learngo2() {
 	// 一个没切，做为一个元素
 	// // //
 
+	v13 := strings.Join(v11, "--")
+	// 拼接 使用指定的分隔符拼接
+	fmt.Println(v13)
+
+}
+
+func Learngo3() {
+	fmt.Println("Learngo3 --")
+	fmt.Println(time.Now())
+	var t time.Time
+	t = time.Now()
+	fmt.Println(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	t = t.AddDate(0, 0, 1)
+	fmt.Println(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	var t1 time.Time
+	t1 = time.Now()
+	t2 := t1.Add(12 * time.Hour)
+	t2 = t2.Add(12 * time.Second)
+	fmt.Println(t1.Sub(t2))
+	fmt.Println(t1.Sub(t2).Abs())     // 绝对值
+	fmt.Println(t1.Sub(t2).Hours())   // 转换为小时, float64
+	fmt.Println(t1.Sub(t2).Minutes()) // 转换为分钟 float64
 }
