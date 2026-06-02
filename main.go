@@ -71,5 +71,7 @@ func main() {
 	utils.Learngo2()
 	utils.LearnGo2()
 	utils.Learngo3()
+	utils.Learngo4()
+	utils.LearnGo5()
 
 }

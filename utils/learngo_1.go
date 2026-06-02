@@ -142,4 +142,9 @@ func Learngo3() {
 	fmt.Println(t1.Sub(t2).Abs())     // 绝对值
 	fmt.Println(t1.Sub(t2).Hours())   // 转换为小时, float64
 	fmt.Println(t1.Sub(t2).Minutes()) // 转换为分钟 float64
+
+	var t3 *time.Time
+	t3 = &t1
+	fmt.Println(*t3)
+
 }
