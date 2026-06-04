@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
+	"time"
 )
 
 func init() {
@@ -112,6 +114,16 @@ func LearnGo5() {
 	default:
 		fmt.Println("v2 is default")
 	}
+
+	switch time.Now().Weekday() {
+	case time.Saturday, time.Sunday: // 多个参数
+		{
+			fmt.Println("it is a weekend")
+		}
+	default:
+		fmt.Println("it is a weekday")
+	}
+
 	switch {
 	case v1 == 12:
 		fmt.Println("v1 is 12")
@@ -123,9 +135,97 @@ func LearnGo5() {
 		fmt.Println("default")
 	}
 
+	whatAmI := func(i any) {
+		switch i.(type) {
+		case bool:
+			fmt.Println(i, "I'm a bool")
+		case int:
+			fmt.Println("I'm an int")
+		default:
+			fmt.Println("default")
+		}
+	}
+	whatAmI(true)
+	/*
+		处理 JSON 反序列化：解析未知结构的 JSON 时，数据通常被解析为 map[string]any 或 []any，
+		必须用 Type Switch 来安全地提取值。
+		错误处理：判断一个 error 接口底层具体是哪种自定义错误类型
+		例如 switch err := err.(type) { case *MyCustomError: ... }
+	*/
+	// 类似 fmt 包的功能：fmt.Println
+	// 需要接收任何类型，并根据它是字符串、数字还是切片来执行完全不同的格式化逻辑
+	// 例如:
+	HandleLog("a string")
+	HandleLog(true)
+	HandleLog(fmt.Errorf("database connection failed")) // 构建一个错误
+	HandleLog(float64(1234.1))                          // default
+
+	// 需要注意的是, 对于不同类型但是处理逻辑相同, 应该使用泛型, 例如
+	fmt.Println("sum up:", sumSomeNumbers(1, 2, 3, 4, 5))
+	fmt.Println("sum up:", sumSomeNumbers(1.1, 1.2, 1.4, 1.5))
+	// 但这并不意味着你可以在同一次函数调用中混合传入 多个不同的类型
+	// fmt.Println("sum up:", sumSomeNumbers("a","b", 3)) // 无法推断T
+
+	/*
+		在 Go 中，像 1、1.1、2 这样直接写出来的数字字面量，被称为无类型常量。
+		它们在没有被赋值给具体变量之前，没有固定的类型（既不是严格的 int，也不是严格的 float64），
+		而是具有“灵活性”
+	*/
+
 	// for
 	for v3 := 0; v3 < 5; v3++ {
 		fmt.Println("v3 is", v3)
 	}
-	// 5.4
+
+	for {
+		fmt.Println("loop and break")
+		break
+	}
+
+	for v4 := 3; v4 >= 0; {
+		v4 = v4 - 1
+		if v4 == 1 {
+			continue
+		}
+		fmt.Printf("The variable v4 is now: %d\n", v4)
+	}
+	// 标签的名称是大小写敏感的，为了提升可读性，一般建议使用全部大写字母
+
+LABEL1:
+	for i := 0; i <= 5; i++ {
+		for j := 0; j <= 5; j++ {
+			if j == 4 || i == 4 {
+				continue LABEL1
+			}
+			fmt.Printf("i is: %d, and j is: %d\n", i, j)
+		}
+	}
+}
+
+func HandleLog(msg any) {
+	switch i := msg.(type) {
+	case string, int, float32, bool:
+		fmt.Println("[info]", i)
+	case error:
+		fmt.Println("[error]", i.Error())
+	case []byte:
+		{
+			var aJson map[string]any
+			if err := json.Unmarshal(i, &aJson); err == nil {
+				fmt.Println("[json]", aJson)
+			} else {
+				fmt.Println("[byte]", string(i))
+			}
+		}
+	default:
+		fmt.Printf("[default] Type: %T, Value: %+v\n", i, i)
+	}
+}
+
+func sumSomeNumbers[T int | float32 | float64 | string](items ...T) T {
+	var sum T
+	for _, number := range items {
+		sum += number
+	}
+	return sum
 }

@@ -20,6 +20,7 @@ func Learngo1() {
 	const Pi float32 = 3.14159
 	fmt.Println(Pi)
 	var v1, v2 int
+	// 声明后却没有给出对应的初始值时，变量将会初始化为 零值 。例如，int 的零值是 0。
 	v1 = 32
 	v2 = 31
 	fmt.Println(v1, v2)
@@ -62,6 +63,14 @@ func Learngo1() {
 	var v11 string
 	v11 += "a string"
 
+	const ( // const 用于声明一个常量。
+		v12 = 1234
+		v13 = "abcd"
+		v14 = v12 / 100
+		// 数值型常量没有确定的类型，直到被给定某个类型，比如显式类型转化。
+	)
+	fmt.Println(v12, v13, v14)
+	// 一个数字可以根据上下文的需要（比如变量赋值、函数调用）自动确定类型。
 }
 
 func Learngo2() {
@@ -147,4 +156,12 @@ func Learngo3() {
 	t3 = &t1
 	fmt.Println(*t3)
 
+	// 在 Go 中，数组 是一个具有编号且长度固定的元素序列。
+	var a [4]int
+	a[2] = 105
+	b := [5]int{1, 2, 3, 4, 5}
+	fmt.Println(a)
+	fmt.Println(b)
+	var c [3][3]int
+	fmt.Println(c)
 }
