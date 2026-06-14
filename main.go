@@ -76,5 +76,6 @@ func main() {
 	utils.LearnGo6()
 	utils.LearnGo7()
 	utils.LearnGo8()
+	utils.LearnGo9()
 
 }

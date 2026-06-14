@@ -187,3 +187,80 @@ func LearnGo8() {
 	}
 	fmt.Println("v61", v61)
 }
+
+func LearnGo9() {
+	fmt.Println("LearnGo9")
+	v1 := []string{"hello", "world"}
+	fmt.Println(v1)
+	learnGoExample(v1...)
+
+	// defer return前执行，panic兜底，多路径返回支持，甚至修改返回值
+	// 立刻求值（defer当前行），后进先出
+	_, err := learnDefer("", "", "")
+	if err != nil {
+		fmt.Println(err)
+	}
+	// 后进先出允许对资源按序加锁
+	// 一点闭包
+	v2 := aCounter()
+	v2()
+	v2()
+	fmt.Println(v2()) // 3
+
+	// https://learnku.com/docs/the-way-to-go/application-closure-function-as-a-return-value/3607
+	// 工厂函数/函数式选项模式 的构造函数 https://chat.qwen.ai/c/79ff671a-42fe-4f6b-8b83-b0241e04d237
+
+}
+
+func learnGoExample(v1 ...string) (v2 []string) {
+	// 这里看起来同样视为声明
+	fmt.Println("len()", len(v1))
+	// 必须参数数目大于0时考虑判断，for会被静默跳过
+	for _, _v1 := range v1 {
+		v2 = append(v2, _v1)
+	}
+	//var v3 string
+	//strings.Join(v1,v3) // v3 is a slice
+	//fmt.Println(v3)
+	return v2
+}
+
+func learnDefer(v1 ...string) (string, error) {
+	defer fmt.Println("deferred 1")
+	defer fmt.Println("deferred 2")
+	defer fmt.Println("deferred 3")
+	fmt.Println("run 1")
+	// IIFE
+	func() {
+		defer fmt.Println("deferred 4")
+		fmt.Println("run 2")
+	}()
+	// 1 2 4 3 2 1
+	// 赋值
+	v2 := func() {
+		defer fmt.Println("deferred 5")
+		fmt.Println("run 3")
+	}
+	v2()
+	/*
+		run 1
+		run 2
+		deferred 4
+		run 3
+		deferred 5
+		deferred 3
+		deferred 2
+		deferred 1
+	*/
+	return v1[0], nil
+}
+
+func aCounter() func() int {
+	v1 := 0
+	// 这个函数返回的函数使用的v1是在heap上分配的，这个地址指向的变量仍然存在
+	// 换言之，这个函数和它的环境一起被保留, 环境中的变量可以被修改
+	return func() int {
+		v1++
+		return v1
+	}
+}
