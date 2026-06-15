@@ -46,17 +46,17 @@ func LearnGo6() {
 	// 或者直接用 s = []int{...} 重新赋值，这不会影响外部！
 	// 因为此时你修改的是“描述符”本身（值传递的拷贝），而不是底层数据。
 	// 4. 结构体指针与“指针接收者”方法
-	v4 := Example1{inSide: 1}
+	v4 := Example0{inSide: 1}
 	changeExample1(&v4)
 	fmt.Println("v4:", v4)
 
 }
 
-type Example1 struct {
+type Example0 struct {
 	inSide int
 }
 
-func changeExample1(v1 *Example1) {
+func changeExample1(v1 *Example0) {
 	v1.inSide = 2
 }
 
@@ -208,7 +208,6 @@ func LearnGo9() {
 	fmt.Println(v2()) // 3
 
 	// https://learnku.com/docs/the-way-to-go/application-closure-function-as-a-return-value/3607
-	// 工厂函数/函数式选项模式 的构造函数 https://chat.qwen.ai/c/79ff671a-42fe-4f6b-8b83-b0241e04d237
 
 }
 
