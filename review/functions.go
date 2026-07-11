@@ -3,7 +3,6 @@ package review
 import (
 	"errors"
 	"fmt"
-	"time"
 )
 
 // ============================================================
@@ -141,13 +140,13 @@ func PanicRecover() {
 
 	// recover 必须在 defer 中调用才有效
 	safeDivide := func(a, b int) (result int) {
+		result = -1
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Printf("捕获 panic: %v\n", r)
-				result = -1
 			}
 		}()
-		return a / b
+		return a / b // 匿名返回值的"返回值槽"是一个无名的隐式变量，defer 摸不到它。具名返回值彻底合并了这两个变量，result 就是那个槽。
 	}
 
 	fmt.Printf("safeDivide(10, 2) = %d\n", safeDivide(10, 2))
@@ -223,24 +222,31 @@ func Validate(account string, balance float64) error {
 func ErrorsReview() {
 	fmt.Println("\n=== 复习：错误处理 ===")
 
-	// errors.Is：判断错误链中是否包含特定错误
-	err := Validate("", 100)
+	// errors.Is：判断错误链中是否包含某个哨兵错误（比较值）
+	// 哨兵错误是包级别的 var，用 == 比较
+	var ErrAccountEmpty = errors.New("账号不能为空")
+	fmt.Printf("ErrAccountEmpty == ErrAccountEmpty? %t\n",
+		errors.Is(ErrAccountEmpty, ErrAccountEmpty))
+
+	// 穿透 %w 也能匹配
+	wrapped := fmt.Errorf("业务校验失败: %w", ErrAccountEmpty)
+	fmt.Printf("errors.Is(wrapped, ErrAccountEmpty)? %t\n",
+		errors.Is(wrapped, ErrAccountEmpty))
+
+	// errors.As：从错误链中提取特定类型的错误（类型提取）
+	err1 := Validate("", 100) // 返回 *ValidationError
 	var valErr *ValidationError
-	if errors.As(err, &valErr) {
-		fmt.Printf("类型断言成功: %v\n", valErr)
+	if errors.As(err1, &valErr) {
+		fmt.Printf("类型提取成功: field=%s, msg=%s\n", valErr.Field, valErr.Message)
 	}
 
-	// errors.As：提取特定类型的错误
-	err2 := Validate("user1", -50)
+	// 穿透 %w 包装链也能提取
+	err2 := Validate("user1", -50) // 被 %w 包了一层
 	if err2 != nil {
-		fmt.Printf("错误: %v\n", err2)
+		fmt.Printf("包装后错误: %v\n", err2)
 		var vErr *ValidationError
-		if errors.As(err2, &vErr) {
-			fmt.Printf("提取到 ValidationError: field=%s\n", vErr.Field)
+		if errors.As(err2, &vErr) { // 如果是那就放进指针 true
+			fmt.Printf("穿透 %%w 提取到: field=%s\n", vErr.Field)
 		}
 	}
-
-	// 常见错误模式
-	fmt.Println("常见错误: time.Sleep 的 duration 必须是正数")
-	_ = time.Now()
 }
