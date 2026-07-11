@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"crypto/rand"
 	"fmt"
+	"math/rand"
 	"os"
 	"runtime"
 	"strings"
@@ -43,7 +43,7 @@ func Learngo1() {
 	v8 = int16(v7 + int8(v8))
 	fmt.Println(v8)
 
-	v9 := rand.Text()
+	v9 := rand.Intn(100)
 	fmt.Println(v9)
 	var v10 i32 = 124
 	fmt.Println(v10)
