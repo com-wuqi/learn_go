@@ -18,4 +18,9 @@ func RunAll() {
 // RunPhase2 执行第二阶段内容
 func RunPhase2() {
 	Interfaces()
+	Structs()
+	FileDemo()
+	JSONDemo()
+	FileJSONDemo()
+	DeferFileDemo()
 }

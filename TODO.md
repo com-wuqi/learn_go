@@ -11,7 +11,8 @@
 > - **禁止直接实现 TODO/练习**：`practice/exercises.go` 中的 `[TODO]` 标记表示用户尚未完成的练习，不要替用户写代码。
 > - **可以做的事**：解释概念、分析已有代码、回答疑问、指出错误、给出思路提示、运行验证命令（如 `go run ./cmd/phase2/`）。
 > - **如果用户卡住**：先给思路提示，不要直接给完整答案。用户要求看答案时再展示。
-> - **检查练习**：`go run ./cmd/check/` 验证练习 1-9，练习 10-18 需用户自己或按需验证。
+> - **适当扩展学习**：当发现用户缺少某项前置知识（如文件 I/O、JSON 库），主动建议插入补充模块。
+> - **检查练习**：按照用户要求检查相关习题。
 > - **关键文件**：
     >
 - `TODO.md` — 学习路线图和进度
@@ -26,12 +27,21 @@
 
 > **上次会话结束点: 2026-07-12**
 
-| 阶段                | 状态           |
-|-------------------|--------------|
-| 第一阶段：复习与查漏补缺      | ✅ 完成         |
-| **第二阶段：接口、测试、并发** | **🔄 接口学习中** |
-| 第三阶段：分布式系统专项      | 待开始          |
-| 第四阶段：综合项目         | 待开始          |
+| 阶段                | 状态                       |
+|-------------------|--------------------------|
+| 第一阶段：复习与查漏补缺      | ✅ 完成                     |
+| **第二阶段：接口、测试、并发** | **🔄 文件 I/O & JSON 学习中** |
+| 第三阶段：分布式系统专项      | 待开始                      |
+| 第四阶段：综合项目         | 待开始                      |
+
+### 补充模块：文件 I/O 与 JSON 基础
+
+> 插入原因：完成 FileStore（练习16）和 JSON tag（练习24）的前置依赖
+
+- [ ] 阅读 `review/io_json.go` — 跑 `go run ./cmd/phase2/`
+- [ ] 练习23: JSON 读写（SaveConfig / LoadConfig）
+- [ ] 回到练习16: 完成 FileStore（`os.ReadFile` + `json.Marshal` + `os.WriteFile`）
+- [ ] 阅读 `review/structs.go` — 结构体嵌入与标签
 
 ### 第二阶段的三个模块（按顺序学）
 
@@ -43,11 +53,15 @@
 
 ### 接口模块学习清单
 
-- [ ] 阅读 `review/interfaces.go` — 跑 `go run ./cmd/phase2/`
-- [ ] 练习15: 实现 sort.Interface 按字符串长度排序
-- [ ] 练习16: KVStore 接口 + 内存/文件双实现
-- [ ] 练习17: 类型断言遍历 Animal 切片
-- [ ] 练习18: Plugin 模式 — Pipeline 串联处理
+- [x] 阅读 `review/interfaces.go` — 跑 `go run ./cmd/phase2/`
+- [x] 练习15: 实现 sort.Interface 按字符串长度排序
+- [x] 练习16: KVStore 接口 + 内存/文件双实现（MemStore ✅, FileStore ⏸️ 等学完 JSON/文件）
+- [x] 练习17: 类型断言遍历 Animal 切片
+- [x] 练习18: Plugin 模式 — Pipeline 串联处理
+- [x] 练习19: 自定义错误类型（实现 error 接口）
+- [x] 练习20: 实现 fmt.Stringer 接口（IPAddr）
+- [x] 练习21: nil 接口陷阱理解
+- [x] 练习22: 接口组合（Printer + Scanner → AllInOne）
 
 ---
 
@@ -110,17 +124,18 @@
 - [ ] **2.1 结构体与方法** — [Ch10](https://learnku.com/docs/the-way-to-go/101-structure-definition/3638)
     - [ ] 结构体定义、工厂方法、标签(tag) — tag 在 JSON/protobuf 编解码中无处不在
     - [ ] 匿名字段与结构体嵌入（组合 > 继承）
-    - [ ] 方法：值接收者 vs 指针接收者，何时用谁
-    - [ ] `String()` 方法实现自定义格式化
-    - [ ] 练习：设计一个 `ServiceConfig` 结构体，用 tag 标注 yaml/json 字段名
+  - [x] 方法：值接收者 vs 指针接收者 — 接口练习中已掌握
+  - [x] `String()` 方法实现自定义格式化 — 练习20已掌握
+  - [ ] 练习24: Database 嵌入 Config 结构体
+  - [ ] 练习25: APIConfig 带 JSON tag
+  - [ ] 练习26: 给 MemStore 添加 String() 方法
 
-- [ ] **2.2 接口** — [Ch11](https://learnku.com/docs/the-way-to-go/what-is-the-111-interface/3647)
-    - [ ] 接口即契约：隐式实现（Go 最大特色）
-    - [ ] 空接口 `interface{}` / `any` 的使用场景
-    - [ ] 类型断言 `v, ok := x.(T)` 和 type switch
-    - [ ] 接口嵌套组合
-    - [ ] 常用标准库接口：`io.Reader`、`io.Writer`、`fmt.Stringer`、`error`、`sort.Interface`
-    - [ ] 练习：定义 `KVStore` 接口，实现两个版本——内存版和文件版
+- [x] **2.2 接口** — [Ch11](https://learnku.com/docs/the-way-to-go/what-is-the-111-interface/3647) ✅ 已完成
+  - [x] 接口即契约：隐式实现（Go 最大特色）
+  - [x] 空接口 `interface{}` / `any` 的使用场景
+  - [x] 类型断言 `v, ok := x.(T)` 和 type switch
+  - [x] 接口嵌套组合
+  - [x] 常用标准库接口：`io.Reader`、`io.Writer`、`fmt.Stringer`、`error`、`sort.Interface`
 
 - [ ] **2.3 反射** — [11.10](https://learnku.com/docs/the-way-to-go/1110-reflector/3656)
     - [ ] `reflect.Type` 和 `reflect.Value`
@@ -131,10 +146,9 @@
 ### 错误处理与测试 (Ch13)
 
 - [ ] **2.4 错误处理进阶** — [Ch13.1-13.6](https://learnku.com/docs/the-way-to-go/131-error-handling/3674)
-    - [ ] `errors.Is`、`errors.As`、`fmt.Errorf("%w", err)` — 错误链
-    - [ ] 自定义错误类型（实现 `error` 接口）
+  - [x] `errors.Is`、`errors.As`、`fmt.Errorf("%w", err)` — 1.6 中已复习
+  - [x] 自定义错误类型 — 练习19已掌握
     - [ ] `panic` 和 `recover`：何时用、何时不用
-    - [ ] 分布式系统中的错误处理模式：重试、熔断、降级
     - [ ] 练习：实现一个带超时和重试机制的 HTTP 请求函数
 
 - [ ] **2.5 单元测试

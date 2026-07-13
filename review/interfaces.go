@@ -24,6 +24,8 @@ type Dog struct{ Name string }
 type Cat struct{ Name string }
 
 func (d Dog) Speak() string { return d.Name + ": 汪汪" }
+
+// Speak 这里是值接收者（只读）
 func (c Cat) Speak() string { return c.Name + ": 喵喵" }
 
 // Dog 和 Cat 没有声明 implements Animal，但因为有 Speak() 方法，自动满足接口

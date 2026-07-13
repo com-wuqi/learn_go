@@ -353,9 +353,9 @@ func AlternatePrint() string {
 // ============================================================
 type ByLen []string
 
-func (b ByLen) Len() int           { return 0 }
-func (b ByLen) Less(i, j int) bool { return false }
-func (b ByLen) Swap(i, j int)      {}
+func (b ByLen) Len() int           { return len(b) }
+func (b ByLen) Less(i, j int) bool { return len(b[i]) < len(b[j]) }
+func (b ByLen) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 
 // ============================================================
 // 练习 16：实现一个 KVStore 接口，分别用内存 map 和文件实现
@@ -369,14 +369,30 @@ type KVStore interface {
 // [TODO] 内存实现
 type MemStore struct {
 	// TODO: 添加字段
+	data map[string]string
 }
 
 func NewMemStore() *MemStore {
+	return &MemStore{data: make(map[string]string)}
+}
+func (m *MemStore) Get(key string) (string, error) {
+	if val, ok := m.data[key]; ok {
+		return val, nil
+	}
+	return "", errors.New("key not found")
+}
+func (m *MemStore) Set(key string, value string) error {
+	m.data[key] = value
 	return nil
 }
-func (m *MemStore) Get(key string) (string, error)     { return "", nil }
-func (m *MemStore) Set(key string, value string) error { return nil }
-func (m *MemStore) Delete(key string) error            { return nil }
+func (m *MemStore) Delete(key string) error {
+	if _, ok := m.data[key]; ok {
+		delete(m.data, key)
+		return nil
+	}
+	return errors.New("key not found")
+
+}
 
 // [TODO] 文件实现（用 JSON 持久化到文件）
 type FileStore struct {
@@ -407,8 +423,22 @@ func (c CatI) Speak() string { return c.Name + ": 喵喵" }
 // 输入: []AnimalI{DogI{"旺财"}, CatI{"咪咪"}, DogI{"大黄"}}
 // 输出: []string{"旺财: 汪汪", "咪咪: 喵喵", "大黄: 汪汪"}
 func DescribeAnimals(animals []AnimalI) []string {
-	// TODO: 遍历 animals，类型断言判断是 Dog 还是 Cat
-	return nil
+	var result []string
+	for _, animal := range animals {
+		if animal != nil {
+			result = append(result, animal.Speak())
+		}
+		//switch animal.(type) {
+		//case DogI:
+		//	break
+		//case CatI:
+		//	break
+		//}
+		//if dog, ok := animal.(DogI); ok {
+		//	result = append(result, dog.Speak())
+		//}
+	}
+	return result
 }
 
 // ============================================================
@@ -422,16 +452,177 @@ type Plugin interface {
 
 type UppercasePlugin struct{}
 
-func (u UppercasePlugin) Process(s string) string { return "" }
+func (u UppercasePlugin) Process(s string) string {
+	return strings.ToUpper(s)
+}
 
 type ReversePlugin struct{}
 
-func (r ReversePlugin) Process(s string) string { return "" }
+func (r ReversePlugin) Process(s string) string {
+	var runes []rune
+	for _, r := range s {
+		runes = append(runes, r)
+	}
+	slices.Reverse(runes)
+	return string(runes)
+}
 
 // [TODO] Pipeline 依次执行 plugins 中的每个插件
 func RunPipeline(input string, plugins []Plugin) string {
+	result := input
+	for _, plugin := range plugins {
+		result = plugin.Process(result)
+	}
+	return result
+}
+
+// ============================================================
+// 练习 19：自定义错误类型
+// 实现 error 接口：Error() string 方法
+// ============================================================
+
+// [TODO] ValidationError 包含 Field 和 Msg 字段
+// 实现 Error() 方法，返回格式: "validation error: 字段名 - 错误描述"
+// 提示：用 fmt.Sprintf
+type ValidationError struct {
+	Field string
+	Msg   string
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation error: %s - %s", e.Field, e.Msg)
+}
+
+// ============================================================
+// 练习 20：实现 fmt.Stringer 接口
+// 实现 String() 方法，用 %s 打印结构体时会自动调用
+// ============================================================
+
+// [TODO] IPAddr 代表 IP 地址四段，实现 String() 方法
+// 示例: IPAddr{192, 168, 1, 1}.String() → "192.168.1.1"
+// 验证: fmt.Println(IPAddr{10, 0, 0, 1}) 输出 10.0.0.1
+type IPAddr [4]byte
+
+func (ip IPAddr) String() string {
+	return fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3])
+}
+
+// ============================================================
+// 练习 21：nil 接口陷阱
+// 思考以下代码的输出是什么？对照 review/interfaces.go 中的警告理解
+// ============================================================
+
+// [TODO] 解释：为什么下面的 IsNil 对某些 nil 指针返回 false？
+// 提示：接口有两部分——类型信息和值，只有两者都是 nil 才 == nil
+func IsNil(v interface{}) bool {
+	return v == nil
+}
+
+func NilInterfaceDemo() {
+	var p *int = nil
+	var v interface{} = p
+	fmt.Printf("p == nil: %t\n", p == nil) // true
+	fmt.Printf("v == nil: %t\n", v == nil) // false
+	fmt.Printf("IsNil(p): %t\n", IsNil(p)) // true
+	fmt.Printf("IsNil(v): %t\n", IsNil(v)) // false（为什么?）
+}
+
+// ============================================================
+// 练习 22：接口组合
+// 定义组合接口并实现
+// ============================================================
+
+// [TODO] 已有 Printer 和 Scanner 接口，定义组合接口 AllInOne（包含两者）
+// 然后让 MyDevice 结构体同时实现三个接口
+type Printer interface {
+	Print() string
+}
+
+type Scanner interface {
+	Scan() string
+}
+
+// [TODO] 定义 AllInOne 接口，组合 Printer 和 Scanner
+type AllInOne interface {
+	Printer
+	Scanner
+}
+
+type MyDevice struct{}
+
+func (d MyDevice) Print() string { return "" }
+func (d MyDevice) Scan() string  { return "" }
+
+// ============================================================
+// 第四部分：文件与 JSON 练习（学完 review/io_json.go 后做）
+// ============================================================
+
+// ============================================================
+// 练习 23：JSON 读写
+// [TODO] SaveConfig 将 cfg 序列化写入文件，LoadConfig 从文件读取
+// ============================================================
+type AppConfig struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Port    int    `json:"port"`
+}
+
+// SaveConfig 将 cfg 序列化为 JSON 写入 path
+func SaveConfig(path string, cfg AppConfig) error {
+	return nil
+}
+
+// LoadConfig 从 path 读取 JSON 并反序列化到 AppConfig
+func LoadConfig(path string) (AppConfig, error) {
+	return AppConfig{}, nil
+}
+
+// ============================================================
+// 第五部分：结构体与方法练习（学完 review/structs.go 后做）
+// ============================================================
+
+// ============================================================
+// 练习 24：结构体嵌入（原 23）
+// Database 嵌入 BaseConfig（不能用 has-a），实现 Connect() 返回连接串
+// ============================================================
+type Config struct {
+	Host string
+	Port int
+}
+
+// [TODO] Database 嵌入 Config（匿名字段），直接提升 Host/Port
+type Database struct {
+	// TODO: 嵌入 Config，再添加 Name 字段
+	Name string
+}
+
+// [TODO] Connect 返回 "postgres://Host:Port/Name"
+func (d *Database) Connect() string {
 	return ""
 }
+
+// ============================================================
+// 练习 25：结构体标签
+// 定义 APIConfig，用 json tag 标注字段名，实现 JSON 序列化
+// ============================================================
+
+// [TODO] APIConfig 带 json tag（字段名用 snake_case）
+// 提示：`json:"api_key"` 格式
+type APIConfig struct {
+	// TODO: 3个字段 — APIKey, BaseURL, Timeout(秒)
+	// APIKey 导出为 "api_key"
+	// BaseURL 导出为 "base_url"
+	// Timeout 导出为 "timeout"，加 omitempty
+}
+
+// ============================================================
+// 练习 26：为已有的 KVStore 添加 String()
+// 回到 KVStore 接口，给 MemStore 添加 String() 方法，方便调试打印
+// ============================================================
+
+// [TODO] 给 MemStore 添加 func (m *MemStore) String() string
+// 返回格式: "MemStore{keys: N}"（N = map 中的 key 数量）
+// 提示：fmt.Sprintf，len(m.data)
 
 // ============================================================
 // 速查填空（基础知识）
