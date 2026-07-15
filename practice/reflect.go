@@ -1,6 +1,7 @@
 package practice
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -84,5 +85,11 @@ type ReflectUser struct {
 // 返回 nil 表示执行成功（无 panic）
 // 提示: defer + recover(), fmt.Errorf("panic: %v", r)
 func SafeCall(fn func()) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = errors.New(fmt.Sprint(e))
+		}
+	}()
+	fn()
 	return nil
 }

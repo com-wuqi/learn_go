@@ -31,4 +31,8 @@ func RunPhase2() {
 	ReflectPitfalls()
 	PanicDemo()
 	TestExplain()
+	TimeDemo()
+	TickerDemo()
+	AfterDemo()
+	DurationDemo()
 }

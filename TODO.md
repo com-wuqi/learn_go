@@ -15,102 +15,67 @@
 > - **检查练习**：按用户要求检查相关习题。
 > - **关键文件**：
     >
-- `review/*.go` — 知识点讲解代码（运行入口：`go run ./cmd/phase2/`）
->   - `practice/exercises.go` — 练习 1-9 已掌握
->   - `practice/interfaces.go` — 练习 15-22 已完成
->   - `practice/io.go` — 练习 23 已完成
->   - `practice/structs.go` — 练习 24-30 已完成
+- `review/*.go` — 知识点讲解代码
+>   - `practice/exercises.go` — 练习 1-9
+>   - `practice/interfaces.go` — 练习 15-22
+>   - `practice/io.go` — 练习 23
+>   - `practice/structs.go` — 练习 24-30
+>   - `practice/reflect.go` — 练习 31-33, 36
+>   - `practice/kvstore_test.go` — 练习 34-35
+>   - `practice/time.go` — 练习 37-38
 >   - `practice/concurrency.go` — 练习 10-14 待学
 
 ---
 
 ## 🎯 当前进度
 
-| 阶段                | 状态           |
-|-------------------|--------------|
-| 第一阶段：复习与查漏补缺      | ✅            |
-| **第二阶段：接口、测试、并发** | **🔄 测试学习中** |
-| 第三阶段：分布式系统专项      | 待开始          |
-| 第四阶段：综合项目         | 待开始          |
+| 阶段       | 状态         |
+|----------|------------|
+| 第一阶段     | ✅          |
+| **第二阶段** | **🔄 复习中** |
+| 第三阶段     | 待开始        |
+| 第四阶段     | 待开始        |
 
-### 🔥 当前：反射 (Reflection) ✅ 已完成
+### 🔥 复习：二阶段前半程总结
 
-- [x] 阅读 `review/reflect.go`
-- [x] 练习31: StructToMap
-- [x] 练习32: FillDefaults
-- [x] 练习33: PrintTags
+- [ ] 复习题1: 完整 KVStore 测试套件（含 JSON 文件持久化验证）
+- [ ] 复习题2: 管道 — 读文件 → Plugin 转换 → 写文件
+- [ ] 复习题3: ConfigLoader — 反射 + JSON + default tag 填充
 
-### 当前：测试 & panic/recover
+### 下一步
 
-- [ ] 阅读 `review/testing.go` — panic/recover + 测试基础
-- [ ] 练习34: 为 KVStore 写表驱动测试
-- [ ] 练习35: 为 RingBuffer 写基准测试
-- [ ] 练习36: panic/recover — SafeCall
-
-### 补充模块：time 包
-
-> 前置于并发（超时控制、定时任务）和 HTTP 重试都需要
-
-- [ ] `time.Now`、`time.Since`、`time.Sleep`
-- [ ] `time.After`、`time.Ticker`、`time.AfterFunc`
-- [ ] `time.Duration` 单位转换
-- [ ] 练习：带超时的操作、定时轮询
-
-### 补充模块：io.Reader/Writer 实战
-
-> 已掌握接口定义，缺少实际工具类用法
-
-- [ ] `bytes.Buffer`、`strings.Reader`、`io.Copy`
-- [ ] `fmt.Fprintf` / `fmt.Fscanf` — 格式化读写
-- [ ] `bufio.Scanner` — 逐行扫描大文件
-- [ ] 练习：实现一个简单的数据流管道
-
-### 补充模块：net/http 基础
-
-> 第三阶段 HTTP/gRPC 的前置
-
-- [ ] `http.Get` / `http.NewRequest` — 客户端
-- [ ] `http.Handler` / `http.HandleFunc` — 服务端
-- [ ] `http.Client` 超时设置
-- [ ] 练习：简易 HTTP API 客户端
+- [ ] io.Reader/Writer 实战（`bytes.Buffer`、`io.Copy`、`bufio.Scanner`）
+- [ ] net/http 基础（Client + Handler）
+- [ ] 并发（goroutine → channel → select → sync → context）
 
 ---
 
 ## 剩余路线
 
-### 错误处理（部分已掌握）
+### 并发 🔥 分布式核心
 
-- [x] `errors.Is`、`errors.As`、`%w` — 第一阶段
-- [x] 自定义错误类型 — 练习19
-- [ ] 练习：带 super时和重试机制的 HTTP 请求（待学 http 模块后做）
-
-### 并发 🔥 分布式核心（待全部前置模块完成后）
-
-- [ ] **2.8** Goroutine + Channel + select
-- [ ] **2.9** Pipeline、Fan-out/Fan-in
-- [ ] **2.10** sync.Mutex、WaitGroup、Once、atomic
-- [ ] **2.11** Context 包
+- [ ] Goroutine + Channel + select
+- [ ] Pipeline、Fan-out/Fan-in
+- [ ] sync.Mutex、WaitGroup、Once、atomic
+- [ ] Context 包
 
 ### 分布式专项
 
 - [ ] 3.1 网络编程（TCP/HTTP）
-- [ ] 3.2 gRPC（protobuf + Stream）
-- [ ] 3.3 服务注册与发现（etcd/consul）
+- [ ] 3.2 gRPC
+- [ ] 3.3 服务注册与发现
 - [ ] 3.4 负载均衡
 - [ ] 3.5 分布式共识（Raft）
-- [ ] 3.6 消息队列（Pub/Sub）
-- [ ] 3.7 可观测性（OpenTelemetry）
+- [ ] 3.6 消息队列
+- [ ] 3.7 可观测性
 
 ### 综合项目
 
 - [ ] 4.1 分布式 KV 存储
 - [ ] 4.2 任务调度系统
 
----
-
 ## 推荐资源
 
 - **并发**: [Go Concurrency Patterns](https://www.youtube.com/watch?v=f6kdp27TYZs)
 - **Raft**: [Raft 可视化](https://raft.github.io/)
 - **分布式**: [MIT 6.824](https://pdos.csail.mit.edu/6.824/)
-- **gRPC**: [gRPC Go Quickstart](https://grpc.io/docs/languages/go/quickstart/)
