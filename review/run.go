@@ -23,4 +23,12 @@ func RunPhase2() {
 	JSONDemo()
 	FileJSONDemo()
 	DeferFileDemo()
+	ReflectBasics()
+	ReflectStruct()
+	ReflectModify()
+	ReflectTags()
+	ReflectKind()
+	ReflectPitfalls()
+	PanicDemo()
+	TestExplain()
 }
