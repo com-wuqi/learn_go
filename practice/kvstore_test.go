@@ -1,6 +1,7 @@
 package practice
 
 import (
+	"os"
 	"testing"
 )
 
@@ -91,3 +92,60 @@ func BenchmarkRingBufferPush(b *testing.B) {
 //func BenchmarkRingBufferPushPop(b *testing.B) {
 //	//
 //}
+
+func TestFileStore(t *testing.T) {
+	f, err0 := os.CreateTemp("", "tempfile-*.db")
+	if err0 != nil {
+		t.Errorf("os.CreateTemp() error = %v", err0)
+	}
+	defer func(name string) {
+		err := os.Remove(name) // 回收
+		if err != nil {
+			t.Errorf("os.Remove() error = %v", err)
+		}
+	}(f.Name())
+	tests := []struct {
+		name       string
+		init       map[string]string
+		key        string
+		want       string
+		needDelete []string
+		wantErr    bool
+	}{
+		{name: "test1：Get存在的key", init: map[string]string{"c": "c"}, key: "c", want: "c", wantErr: false},
+		{name: "test2: Get不存在的key", init: map[string]string{"a": "a"}, key: "b", want: "", wantErr: true},
+		{name: "test3: Delete存在的key", init: map[string]string{"a": "a"}, key: "a", want: "a", needDelete: []string{"a"}, wantErr: false},
+		{name: "test4: JSON 持久化验证", init: make(map[string]string, 1), key: "c", want: "c", wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			store := NewFileStore(f.Name())
+			for k, v := range tt.init {
+				err := store.Set(k, v)
+				if err != nil {
+					t.Errorf("Set() error = %v", err)
+				}
+
+			}
+			if got, err := store.Get(tt.key); (err != nil) != tt.wantErr || got != tt.want {
+				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.needDelete != nil {
+				for _, d := range tt.needDelete {
+					err := store.Delete(d)
+					if err != nil {
+						t.Errorf("Delete() error = %v", err)
+					}
+					_, err = store.Get(d)
+					if err == nil {
+						t.Errorf("Delete() should have deleted %v", d)
+					}
+				}
+			}
+			err := store.Save()
+			if err != nil {
+				t.Errorf("Save() error = %v", err)
+			}
+		})
+	}
+}

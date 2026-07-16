@@ -60,6 +60,7 @@ type FileStore struct {
 func NewFileStore(path string) *FileStore {
 	b, err := os.ReadFile(path)
 	if err != nil {
+		// 文件读取失败，返回空
 		return &FileStore{path: path, data: make(map[string]string)}
 	}
 	var data map[string]string
