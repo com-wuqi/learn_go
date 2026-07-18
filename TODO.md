@@ -42,10 +42,23 @@
 - [ ] 复习题2: 管道 — 读文件 → Plugin 转换 → 写文件
 - [ ] 复习题3: ConfigLoader — 反射 + JSON + default tag 填充
 
+### 🔥 io.Reader/Writer 实战 ✅ 已完成
+
+- [x] 阅读 `review/io_reader.go`
+- [x] 练习39: CountLines
+- [x] 练习40: FilterLines
+- [x] 练习41: ConcatReaders
+
+### 🔥 net/http 基础
+
+- [ ] 阅读 `review/http.go` — 跑 `go run ./cmd/phase2/`
+- [ ] 练习42: HTTP GET 请求
+- [ ] 练习43: 简易 HTTP 服务端
+- [ ] 练习44: 带超时的 HTTP 客户端
+
 ### 下一步
 
-- [ ] io.Reader/Writer 实战（`bytes.Buffer`、`io.Copy`、`bufio.Scanner`）
-- [ ] net/http 基础（Client + Handler）
+- [ ] net/http 基础
 - [ ] 并发（goroutine → channel → select → sync → context）
 
 ---
