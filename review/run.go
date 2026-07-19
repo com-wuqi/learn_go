@@ -46,4 +46,11 @@ func RunPhase2() {
 	HTTPNewRequestDemo()
 	HTTPServerDemo()
 	HTTPTimeoutDemo()
+	GoroutineDemo()
+	UnbufferedChanDemo()
+	BufferedChanDemo()
+	CloseRangeDemo()
+	SelectDemo()
+	SelectDefaultDemo()
+	ProducerConsumerDemo()
 }

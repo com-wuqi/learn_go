@@ -58,8 +58,31 @@
 
 ### 下一步
 
-- [ ] net/http 基础
-- [ ] 并发（goroutine → channel → select → sync → context）
+- [x] net/http 基础 ✅
+
+### 🔥 总复习：二阶段全盘回顾 ✅
+
+- [x] 复习题 A: 健康检查器
+- [x] 复习题 B: JSON API 客户端
+- [x] 复习题 C: 数据管道
+
+### 🔥 并发 Part 1/3：goroutine + channel + select（施工中）
+
+- [ ] 阅读 `review/goroutine.go` — 跑 `go run ./cmd/phase2/`
+- [ ] 练习45: 生产者-消费者模型
+- [ ] 练习14（回顾）: 交替打印 1-10
+- [ ] 练习11（回顾）: 超时重试（已完成 RunWithTimeout，可跳过）
+
+### 🔥 并发 Part 2/3：同步原语
+
+- [ ] sync.Mutex、RWMutex、WaitGroup、Once、atomic
+- [ ] 练习10: SafeCounter
+
+### 🔥 并发 Part 3/3：进阶模式 + Context
+
+- [ ] Pipeline、Fan-out/Fan-in
+- [ ] Context 包（超时、取消、传值）
+- [ ] 练习12: WorkerPool
 
 ---
 
