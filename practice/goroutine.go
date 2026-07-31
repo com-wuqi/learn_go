@@ -1,5 +1,11 @@
 package practice
 
+import (
+	"math/rand"
+	"sync"
+	"time"
+)
+
 // ============================================================
 // goroutine + channel 练习（学完 review/goroutine.go 后做）
 // ============================================================
@@ -10,7 +16,22 @@ package practice
 // 消费者用 range 接收并累加，返回总和
 // 提示: sync.WaitGroup 等所有生产者完成后再 close(ch)
 func ProducerConsumerSum(produceCount int) int {
-	return 0
+	ch1 := make(chan int, produceCount+1)
+	wg := &sync.WaitGroup{}
+	for range produceCount {
+		wg.Add(1)
+		go func(wg1 *sync.WaitGroup) {
+			defer wg1.Done()
+			ch1 <- rand.Int()
+		}(wg)
+	}
+	wg.Wait()
+	close(ch1)
+	var sum int
+	for v := range ch1 {
+		sum += v
+	}
+	return sum
 }
 
 // 练习 14（激活）：交替打印 1-10
@@ -21,5 +42,16 @@ func ProducerConsumerSum(produceCount int) int {
 // [TODO] SelectWithDefault 从 ch 读取，如果 100ms 内没收到数据返回 defaultVal
 // 提示: select + time.After + default
 func SelectWithDefault(ch chan int, defaultVal int) int {
-	return 0
+	var result int
+	select {
+	case d, ok := <-ch:
+		if ok {
+			result = d
+		} else {
+			result = defaultVal
+		}
+	case <-time.After(time.Millisecond * 100):
+		result = defaultVal
+	}
+	return result
 }

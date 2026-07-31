@@ -16,96 +16,54 @@
 > - **关键文件**：
     >
 - `review/*.go` — 知识点讲解代码
->   - `practice/exercises.go` — 练习 1-9
->   - `practice/interfaces.go` — 练习 15-22
->   - `practice/io.go` — 练习 23
->   - `practice/structs.go` — 练习 24-30
->   - `practice/reflect.go` — 练习 31-33, 36
->   - `practice/kvstore_test.go` — 练习 34-35
->   - `practice/time.go` — 练习 37-38
->   - `practice/concurrency.go` — 练习 10-14 待学
+>   - `practice/exercises.go` — 练习 1-9（基础）
+>   - `practice/interfaces.go` — 练习 15-22（接口）
+>   - `practice/io.go` — 练习 23（文件/JSON）
+>   - `practice/structs.go` — 练习 24-30（结构体）
+>   - `practice/reflect.go` — 练习 31-33, 36（反射 + panic）
+>   - `practice/kvstore_test.go` — 练习 34-35（测试）
+>   - `practice/time.go` — 练习 37-38（time 包）
+>   - `practice/io_reader.go` — 练习 39-41（io.Reader/Writer）
+>   - `practice/http.go` — 练习 42-44（HTTP）
+>   - `practice/goroutine.go` — 练习 45-46（goroutine/channel）
+>   - `practice/concurrency.go` — 练习 10-14, 47-53（并发综合）
+>   - `practice/review.go` — 复习题 A-C（综合）
+>   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按模块演示
 
 ---
 
 ## 🎯 当前进度
 
-| 阶段       | 状态         |
-|----------|------------|
-| 第一阶段     | ✅          |
-| **第二阶段** | **🔄 复习中** |
-| 第三阶段     | 待开始        |
-| 第四阶段     | 待开始        |
+| 阶段       | 状态                   |
+|----------|----------------------|
+| 第一阶段     | ✅                    |
+| **第二阶段** | **🔄 收尾中（练习 51-53）** |
+| 第三阶段     | 待开始                  |
+| 第四阶段     | 待开始                  |
 
-### 🔥 复习：二阶段前半程总结
-
-- [ ] 复习题1: 完整 KVStore 测试套件（含 JSON 文件持久化验证）
-- [ ] 复习题2: 管道 — 读文件 → Plugin 转换 → 写文件
-- [ ] 复习题3: ConfigLoader — 反射 + JSON + default tag 填充
-
-### 🔥 io.Reader/Writer 实战 ✅ 已完成
-
-- [x] 阅读 `review/io_reader.go`
-- [x] 练习39: CountLines
-- [x] 练习40: FilterLines
-- [x] 练习41: ConcatReaders
-
-### 🔥 net/http 基础
-
-- [ ] 阅读 `review/http.go` — 跑 `go run ./cmd/phase2/`
-- [ ] 练习42: HTTP GET 请求
-- [ ] 练习43: 简易 HTTP 服务端
-- [ ] 练习44: 带超时的 HTTP 客户端
-
-### 下一步
-
-- [x] net/http 基础 ✅
-
-### 🔥 总复习：二阶段全盘回顾 ✅
-
-- [x] 复习题 A: 健康检查器
-- [x] 复习题 B: JSON API 客户端
-- [x] 复习题 C: 数据管道
-
-### 🔥 并发 Part 1/3：goroutine + channel + select（施工中）
-
-- [ ] 阅读 `review/goroutine.go` — 跑 `go run ./cmd/phase2/`
-- [ ] 练习45: 生产者-消费者模型
-- [ ] 练习14（回顾）: 交替打印 1-10
-- [ ] 练习11（回顾）: 超时重试（已完成 RunWithTimeout，可跳过）
-
-### 🔥 并发 Part 2/3：同步原语
-
-- [ ] sync.Mutex、RWMutex、WaitGroup、Once、atomic
-- [ ] 练习10: SafeCounter
-
-### 🔥 并发 Part 3/3：进阶模式 + Context
-
-- [ ] Pipeline、Fan-out/Fan-in
-- [ ] Context 包（超时、取消、传值）
-- [ ] 练习12: WorkerPool
+> **上次会话：2026-07-26** | 二阶段基本完成，三阶段从分布式专项开始
 
 ---
 
-## 剩余路线
+### 🏁 二阶段收尾练习
 
-### 并发 🔥 分布式核心
+- [ ] 练习51: ParallelSum — 并行计算平方和
+- [ ] 练习52: WorkerPool + Context 超时
+- [ ] 练习53: RateLimiter — channel 作信号量
 
-- [ ] Goroutine + Channel + select
-- [ ] Pipeline、Fan-out/Fan-in
-- [ ] sync.Mutex、WaitGroup、Once、atomic
-- [ ] Context 包
+---
 
-### 分布式专项
+## 第三阶段：分布式系统专项 🎯
 
-- [ ] 3.1 网络编程（TCP/HTTP）
-- [ ] 3.2 gRPC
-- [ ] 3.3 服务注册与发现
+- [ ] 3.1 网络编程（TCP/HTTP Server/Client）
+- [ ] 3.2 gRPC（protobuf + Unary/Stream RPC）
+- [ ] 3.3 服务注册与发现（etcd）
 - [ ] 3.4 负载均衡
 - [ ] 3.5 分布式共识（Raft）
-- [ ] 3.6 消息队列
-- [ ] 3.7 可观测性
+- [ ] 3.6 消息队列（Pub/Sub）
+- [ ] 3.7 可观测性（OpenTelemetry）
 
-### 综合项目
+## 第四阶段：综合项目 🏗️
 
 - [ ] 4.1 分布式 KV 存储
 - [ ] 4.2 任务调度系统
@@ -115,3 +73,4 @@
 - **并发**: [Go Concurrency Patterns](https://www.youtube.com/watch?v=f6kdp27TYZs)
 - **Raft**: [Raft 可视化](https://raft.github.io/)
 - **分布式**: [MIT 6.824](https://pdos.csail.mit.edu/6.824/)
+- **gRPC**: [gRPC Go Quickstart](https://grpc.io/docs/languages/go/quickstart/)

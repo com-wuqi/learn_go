@@ -53,4 +53,42 @@ func RunPhase2() {
 	SelectDemo()
 	SelectDefaultDemo()
 	ProducerConsumerDemo()
+	MutexDemo()
+	RWMutexDemo()
+	OnceDemo()
+	AtomicDemo()
+	AtomicCounterDemo()
+	PipelineDemo()
+	FanOutFanInDemo()
+	WorkerPoolDemo()
+	ContextCancelDemo()
+	ContextTimeoutDemo()
+	ContextValueDemo()
+}
+
+func RunGoroutine() {
+	GoroutineDemo()
+	UnbufferedChanDemo()
+	BufferedChanDemo()
+	CloseRangeDemo()
+	SelectDemo()
+	SelectDefaultDemo()
+	ProducerConsumerDemo()
+}
+
+func RunSync() {
+	MutexDemo()
+	RWMutexDemo()
+	OnceDemo()
+	AtomicDemo()
+	AtomicCounterDemo()
+}
+
+func RunPatterns() {
+	PipelineDemo()
+	FanOutFanInDemo()
+	WorkerPoolDemo()
+	ContextCancelDemo()
+	ContextTimeoutDemo()
+	ContextValueDemo()
 }
