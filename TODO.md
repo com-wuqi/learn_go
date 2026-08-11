@@ -14,8 +14,9 @@
 > - **适当扩展学习**：发现用户缺少前置知识时，主动建议插入补充模块。
 > - **检查练习**：按用户要求检查相关习题。
 > - **关键文件**：
-    >
-- `review/*.go` — 知识点讲解代码
+> >
+>   - `review/basics.go` … `review/http.go` — 一、二阶段知识点讲解
+>   - `review/networking.go` — 三阶段网络编程知识点讲解
 >   - `practice/exercises.go` — 练习 1-9（基础）
 >   - `practice/interfaces.go` — 练习 15-22（接口）
 >   - `practice/io.go` — 练习 23（文件/JSON）
@@ -27,35 +28,48 @@
 >   - `practice/http.go` — 练习 42-44（HTTP）
 >   - `practice/goroutine.go` — 练习 45-46（goroutine/channel）
 >   - `practice/concurrency.go` — 练习 10-14, 47-53（并发综合）
->   - `practice/review.go` — 复习题 A-C（综合）
->   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按模块演示
+>   - `practice/review.go` — 复习题 A-M（综合）
+>   - `practice/networking.go` — 练习 N-V（网络编程）
+>   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
+> > - **运行方式**：
+      > >
+- `go run cmd/part3/main.go` — 运行第三阶段知识演示
+> >   - 练习验证：直接 `go build ./practice/...` 检查编译
 
 ---
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                   |
-|----------|----------------------|
-| 第一阶段     | ✅                    |
-| **第二阶段** | **🔄 收尾中（练习 51-53）** |
-| 第三阶段     | 待开始                  |
-| 第四阶段     | 待开始                  |
+| 阶段       | 状态               |
+|----------|------------------|
+| 第一阶段     | ✅                |
+| 第二阶段     | ✅                |
+| **第三阶段** | **🔄 3.1 网络编程中** |
+| 第四阶段     | 待开始              |
 
-> **上次会话：2026-07-26** | 二阶段基本完成，三阶段从分布式专项开始
+> **上次会话：2026-07-31** | 二阶段复习完成，开始三阶段网络编程
 
 ---
 
-### 🏁 二阶段收尾练习
+### 🏁 三阶段 3.1 练习 (N-V)
 
-- [ ] 练习51: ParallelSum — 并行计算平方和
-- [ ] 练习52: WorkerPool + Context 超时
-- [ ] 练习53: RateLimiter — channel 作信号量
+- [ ] N: TCP Echo Server
+- [ ] O: SimpleRouter — HTTP 路由
+- [ ] P: JSON API Server
+- [ ] Q: HTTP GET + 超时重试
+- [ ] R: HTTP 优雅关闭
+- [ ] S: 请求体限流中间件
+- [ ] T: SSE 流式响应
+- [ ] U: TCP 连接池
+- [ ] V: 文件上传
+
+> 知识演示：`go run cmd/part3/main.go`
 
 ---
 
 ## 第三阶段：分布式系统专项 🎯
 
-- [ ] 3.1 网络编程（TCP/HTTP Server/Client）
+- [ ] 3.1 网络编程（TCP/HTTP Server/Client）🔄
 - [ ] 3.2 gRPC（protobuf + Unary/Stream RPC）
 - [ ] 3.3 服务注册与发现（etcd）
 - [ ] 3.4 负载均衡

@@ -3,5 +3,5 @@ package main
 import "LearnGo/review"
 
 func main() {
-	review.RunPatterns()
+	review.RunPhase3()
 }
