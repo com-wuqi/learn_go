@@ -2,7 +2,9 @@ package practice
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 )
 
@@ -16,7 +18,34 @@ import (
 // 每收到一个连接，循环读取直到 EOF，把读到的内容原样写回
 // 提示: net.Listen("tcp", addr) → 循环 Accept() → go handle(conn)
 func StartEchoServer(addr string) error {
-	return errors.New("not implemented")
+	listen, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	defer func(listen net.Listener) {
+		err := listen.Close()
+		if err != nil {
+			fmt.Println("Error closing listener")
+		}
+	}(listen)
+	go func() {
+		for {
+			conn, err := listen.Accept()
+			if err != nil {
+				fmt.Println("Error accepting connection")
+				return
+			}
+			go func(conn net.Conn) {
+				defer conn.Close()
+				_, err := io.Copy(conn, conn)
+				if err != nil {
+					return
+				}
+			}(conn)
+		}
+	}()
+
+	return nil
 }
 
 // 练习 O：简易 HTTP Router

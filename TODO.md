@@ -65,6 +65,15 @@
 
 > 知识演示：`go run cmd/part3/main.go`
 
+### 📚 3.1 补充学习（建议插入）
+
+- [ ] errgroup（`golang.org/x/sync/errgroup`）— 收集 goroutine 错误 + 协调取消
+- [ ] sync.WaitGroup — 等待一组 goroutine 全部退出
+- [ ] context 取消传播 — ctx.Done() / ctx.Err()
+- [ ] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
+- [ ] sync.Once — 保证关闭/初始化只执行一次
+- [ ] golang.org/x/net/netutil.LimitListener — 限制并发连接数
+
 ---
 
 ## 第三阶段：分布式系统专项 🎯

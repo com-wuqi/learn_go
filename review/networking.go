@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -93,6 +94,104 @@ func TCPFrameDemo() {
 	resp2, _ := bufio.NewReader(conn).ReadString('\n')
 	conn.Close()
 	fmt.Printf("  收到: %q %q\n", resp, resp2) // echo: msg1 echo: msg2
+}
+
+// --- TCP 优雅关闭：由谁等待所有 conn goroutine 退出？ ---
+// 答案: accept 循环所在的 goroutine 负责等（wg.Wait），调用方通过 done 等它完成。
+// 但 wg.Wait() 没有超时——某个 handler 卡死会拖死整个关闭流程。
+// 所以等待要设宽限期: 先等 handler 退出 → 超时则强制 Close 剩余连接，不再死等。
+// 原则:
+//   1. wg.Add(1) 必须在 go handle(conn) 之前调用（父 goroutine 里做）
+//   2. conn goroutine 用 defer wg.Done() 保证退出时通知
+//   3. 停止流程: 关 listener（Accept 返回 net.ErrClosed）→ 宽限期等 handler → 超时强制断开
+
+func TCPGracefulShutdownDemo() {
+	fmt.Println("\n=== TCP 优雅关闭（宽限期兜底，避免被卡死的 handler 拖死）===")
+
+	ln, err := net.Listen("tcp", ":0")
+	if err != nil {
+		fmt.Println("监听失败:", err)
+		return
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	const grace = 1 * time.Second
+
+	var (
+		mu    sync.Mutex
+		conns = make(map[net.Conn]struct{})
+		wg    sync.WaitGroup
+	)
+
+	// 停止信号：只关 listener，不再接受新连接（先不关 conn，留给宽限期）
+	go func() {
+		<-ctx.Done()
+		ln.Close()
+	}()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				break // listener 已关闭
+			}
+			wg.Add(1) // 必须在 go 之前，防止与 Wait 竞争
+			mu.Lock()
+			conns[conn] = struct{}{}
+			mu.Unlock()
+
+			go func(c net.Conn) {
+				defer wg.Done()
+				defer c.Close()
+				defer func() {
+					mu.Lock()
+					delete(conns, c)
+					mu.Unlock()
+				}()
+				io.Copy(c, c)
+			}(conn)
+		}
+
+		// wg.Wait() 没有超时，所以包一层 channel，再用 select 加宽限期
+		waitAll := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(waitAll)
+		}()
+
+		select {
+		case <-waitAll:
+			fmt.Println("  所有 conn 干净退出")
+		case <-time.After(grace):
+			// 宽限期到：还有 handler 卡着，强制断开，不再死等
+			fmt.Println("  宽限期到：强制断开剩余连接")
+			mu.Lock()
+			for c := range conns {
+				c.Close()
+			}
+			mu.Unlock()
+		}
+	}()
+
+	// 客户端验证
+	client, err := net.Dial("tcp", ln.Addr().String())
+	if err != nil {
+		fmt.Println("客户端连接失败:", err)
+		return
+	}
+	fmt.Fprintf(client, "ping\n")
+	resp, _ := bufio.NewReader(client).ReadString('\n')
+	fmt.Printf("  回显: %s", resp)
+
+	// 客户端不关闭连接，handler 会一直阻塞在 io.Copy 的 Read 上 → 触发宽限期
+	cancel()
+	<-done // 等 accept goroutine 完成宽限期流程
+	fmt.Println("  关闭流程结束（不再等待卡死的 handler）")
+	client.Close()
 }
 
 // --- http.Handler 接口 ---
@@ -281,7 +380,9 @@ func UploadDemo() {
 	}
 
 	// 显式创建 listener，客户端才能拿到真实端口
-	ln, err := net.Listen("tcp", ":0")
+	// 注意绑 127.0.0.1：本机 HTTP 代理的 NO_PROXY 只放行 127.0.0.1/::1，
+	// 绑 :0 得到的 [::]:端口 会把请求送进代理导致 502
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		fmt.Println("监听失败:", err)
 		return
@@ -341,6 +442,7 @@ func UploadDemo() {
 func RunPhase3() {
 	TCPEchoDemo()
 	TCPFrameDemo()
+	TCPGracefulShutdownDemo()
 	HandlerInterfaceDemo()
 	GracefulShutdownDemo()
 	FlusherDemo()
