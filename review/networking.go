@@ -194,6 +194,126 @@ func TCPGracefulShutdownDemo() {
 	client.Close()
 }
 
+// --- 抽象对照：包装 listener（trackingListener） ---
+// 手动版在 server 循环里维护 mu/conns；抽象版把"注册/注销"收进 listener：
+//   Accept() 返回的 conn 自动进集合，Close() 自动出集合。
+// server 循环只需要 WaitGroup + 关闭流程，不再碰连接集合。
+// 注意: 这不是"必须"的抽象——没有重复需求时手写即可（YAGNI）。
+
+type trackedConn struct {
+	net.Conn
+	parent *trackingListener
+}
+type trackingListener struct {
+	net.Listener
+	mu    sync.Mutex
+	conns map[*trackedConn]struct{}
+}
+
+func newTrackingListener(ln net.Listener) *trackingListener {
+	return &trackingListener{Listener: ln, conns: make(map[*trackedConn]struct{})}
+}
+
+func (l *trackingListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	tc := &trackedConn{Conn: c, parent: l}
+	l.mu.Lock()
+	l.conns[tc] = struct{}{}
+	l.mu.Unlock()
+	return tc, nil
+}
+
+// closeAll 强制断开所有活跃连接，并清空集合
+func (l *trackingListener) closeAll() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for tc := range l.conns {
+		tc.Conn.Close() // 直接关底层，避免 Close 回删 map 造成重入
+	}
+	l.conns = make(map[*trackedConn]struct{})
+}
+
+func (c *trackedConn) Close() error {
+	err := c.Conn.Close()
+	c.parent.mu.Lock()
+	delete(c.parent.conns, c)
+	c.parent.mu.Unlock()
+	return err
+}
+
+func TrackingListenerDemo() {
+	fmt.Println("\n=== 抽象对照：trackingListener ===")
+	fmt.Println("  连接注册/注销收进 listener，server 循环不再碰 mu/conns")
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		fmt.Println("监听失败:", err)
+		return
+	}
+	tracker := newTrackingListener(ln)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	const grace = 500 * time.Millisecond
+
+	// 停止信号：关 listener，不再接受新连接
+	go func() {
+		<-ctx.Done()
+		tracker.Close()
+	}()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			conn, err := tracker.Accept()
+			if err != nil {
+				break
+			}
+			wg.Add(1) // 仍在父 goroutine 里 Add
+			go func(c net.Conn) {
+				defer wg.Done()
+				defer c.Close() // trackedConn.Close 自动注销
+				io.Copy(c, c)
+			}(conn)
+		}
+
+		waitAll := make(chan struct{})
+		go func() {
+			wg.Wait()
+			close(waitAll)
+		}()
+
+		select {
+		case <-waitAll:
+			fmt.Println("  所有 conn 干净退出")
+		case <-time.After(grace):
+			fmt.Println("  宽限期到：tracker.closeAll() 强制断开")
+			tracker.closeAll()
+		}
+	}()
+
+	client, err := net.Dial("tcp", tracker.Addr().String())
+	if err != nil {
+		fmt.Println("客户端连接失败:", err)
+		return
+	}
+	fmt.Fprintf(client, "ping\n")
+	resp, _ := bufio.NewReader(client).ReadString('\n')
+	fmt.Printf("  回显: %s", resp)
+
+	// 客户端不关闭连接 → handler 阻塞在 Read → 触发宽限期强制断开
+	cancel()
+	<-done
+	fmt.Println("  关闭流程结束")
+	client.Close()
+}
+
 // --- http.Handler 接口 ---
 // 所有 HTTP 服务都是围绕这个接口：
 //
@@ -443,6 +563,7 @@ func RunPhase3() {
 	TCPEchoDemo()
 	TCPFrameDemo()
 	TCPGracefulShutdownDemo()
+	TrackingListenerDemo()
 	HandlerInterfaceDemo()
 	GracefulShutdownDemo()
 	FlusherDemo()

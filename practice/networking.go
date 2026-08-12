@@ -1,11 +1,14 @@
 package practice
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"time"
 )
 
 // ============================================================
@@ -68,6 +71,11 @@ func (r *SimpleRouter) Handle(path string, handler http.HandlerFunc) {
 
 func (r *SimpleRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// TODO
+	if handler, ok := r.routes[req.URL.Path]; ok {
+		handler(w, req)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 // 练习 P：JSON API 服务端
@@ -79,7 +87,29 @@ func (r *SimpleRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 //
 // 返回 *SimpleRouter 实例
 func NewJSONServer() *SimpleRouter {
-	return nil
+	health := func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+	echo := func(w http.ResponseWriter, req *http.Request) {
+		defer req.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		data, _ := io.ReadAll(req.Body)
+		var encodedData any
+		if err := json.Unmarshal(data, &encodedData); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err := json.NewEncoder(w).Encode(encodedData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	return &SimpleRouter{routes: map[string]http.HandlerFunc{"/echo": echo, "/health": health}}
 }
 
 // 练习 Q：HTTP 客户端超时 + 重试
@@ -89,7 +119,29 @@ func NewJSONServer() *SimpleRouter {
 // 全部失败返回最后一次的错误
 // 提示: http.Client{Timeout: timeout}.Do 或 Get
 func HTTPGetWithRetry(url string, timeoutMs int, retries int) (*http.Response, error) {
-	return nil, errors.New("not implemented")
+	// 最多尝试 retries+1 次
+	client := http.Client{
+		Timeout: time.Duration(time.Duration(timeoutMs) * time.Millisecond),
+	}
+	var lastErr error
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < retries+1; i++ {
+		resp, err2 := client.Do(req)
+		if err2 != nil {
+			lastErr = err2
+			continue
+		}
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return resp, nil
+		}
+		resp.Body.Close()
+		// lastErr = err2 // 此处非网络层故障，nil
+		lastErr = errors.New(resp.Status)
+	}
+	return nil, lastErr
 }
 
 // 练习 R：HTTP Server 优雅关闭
@@ -98,7 +150,22 @@ func HTTPGetWithRetry(url string, timeoutMs int, retries int) (*http.Response, e
 // stop 调用后服务应优雅关闭（不再接受新请求，等待正在处理的请求完成）
 // 提示: http.Server{Addr: addr}, srv.ListenAndServe(), srv.Shutdown(context.Background())
 func GracefulServer(addr string, handler http.Handler) (stop func() error, err error) {
-	return nil, errors.New("not implemented")
+	server := &http.Server{Handler: handler}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	go server.Serve(ln)
+	stop = func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err1 := server.Shutdown(ctx); err1 != nil {
+			server.Close()
+			return err1
+		}
+		return nil
+	}
+	return stop, nil
 }
 
 // 练习 S：HTTP 请求体限流（MiddleWare）
@@ -107,7 +174,18 @@ func GracefulServer(addr string, handler http.Handler) (stop func() error, err e
 // 超过则返回 413 Request Entity Too Large
 // 提示: http.MaxBytesReader
 func LimitBodyMiddleware(maxBytes int64) func(http.Handler) http.Handler {
-	return nil
+	limitFunc := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			//defer r.Body.Close()
+			if r.ContentLength > maxBytes {
+				http.Error(w, "Request too large", http.StatusRequestEntityTooLarge)
+				return // 必须，否则会污染相应
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+			next.ServeHTTP(w, r)
+		})
+	}
+	return limitFunc
 }
 
 // 练习 T：流式 JSON 响应（Server-Sent Events 风格）

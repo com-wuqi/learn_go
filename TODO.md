@@ -13,6 +13,21 @@
 > - **如果用户卡住**：先给思路提示，不要直接给完整答案。用户要求看答案时再展示。
 > - **适当扩展学习**：发现用户缺少前置知识时，主动建议插入补充模块。
 > - **检查练习**：按用户要求检查相关习题。
+> - **当前进度快照（2026-08-12）**：
+> >
+>   - 第三阶段 3.1 网络编程中：练习 N-S 已完成 ✅，T/U/V 待做
+>   - 补充学习（已讲解、未动手）：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
+> - **项目约定（用户 2026-08-11 明确）**：
+> >
+>   - 练习题解答写在 `practice/*.go`（用户自己动手）；`review/*.go` 只做大范围复习讲解
+>   - 检查练习：先读代码 → `go build ./...` → 必要时写临时测试（`practice/zz_check_test.go`，测完删除）
+> - **环境/工具备忘**：
+> >
+>   - 沙箱 bwrap 故障：`apply_patch` 工具不可用，用提权 `exec_command` + Python 定点替换文件，改完 `gofmt -w` 并编译验证
+>   - 环境有 `HTTP_PROXY=http://127.0.0.1:7897/` 且 `NO_PROXY` 不含 `[::]`：本地 HTTP 演示客户端地址用 `127.0.0.1`（绑
+      `:0` 会被代理返回 502）
+>   - `review/networking.go` FlusherDemo 有一行 `} // codex resume <uuid>` 残留注释（未确认是否删除）；UploadDemo 的
+      `ParseMultipartForm(4 << 20)` 是用户有意改的（演示大文件落盘）
 > - **关键文件**：
 > >
 >   - `review/basics.go` … `review/http.go` — 一、二阶段知识点讲解
@@ -40,25 +55,25 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态               |
-|----------|------------------|
-| 第一阶段     | ✅                |
-| 第二阶段     | ✅                |
-| **第三阶段** | **🔄 3.1 网络编程中** |
-| 第四阶段     | 待开始              |
+| 阶段       | 状态                                  |
+|----------|-------------------------------------|
+| 第一阶段     | ✅                                   |
+| 第二阶段     | ✅                                   |
+| **第三阶段** | **🔄 3.1 网络编程中（练习 N-S ✅，T/U/V 待做）** |
+| 第四阶段     | 待开始                                 |
 
-> **上次会话：2026-07-31** | 二阶段复习完成，开始三阶段网络编程
+> **上次会话：2026-08-12** | 3.1 练习 N-S 完成 ✅（T/U/V 待做）；补充学了优雅关闭宽限期、trackingListener、GetBody
 
 ---
 
 ### 🏁 三阶段 3.1 练习 (N-V)
 
-- [ ] N: TCP Echo Server
-- [ ] O: SimpleRouter — HTTP 路由
-- [ ] P: JSON API Server
-- [ ] Q: HTTP GET + 超时重试
-- [ ] R: HTTP 优雅关闭
-- [ ] S: 请求体限流中间件
+- [x] N: TCP Echo Server
+- [x] O: SimpleRouter — HTTP 路由
+- [x] P: JSON API Server
+- [x] Q: HTTP GET + 超时重试
+- [x] R: HTTP 优雅关闭
+- [x] S: 请求体限流中间件
 - [ ] T: SSE 流式响应
 - [ ] U: TCP 连接池
 - [ ] V: 文件上传
@@ -73,6 +88,8 @@
 - [ ] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
 - [ ] sync.Once — 保证关闭/初始化只执行一次
 - [ ] golang.org/x/net/netutil.LimitListener — 限制并发连接数
+
+> 说明：以上概念 2026-08-12 会话已讲解，尚未动手实践，建议下个会话挑 1-2 项补练习。
 
 ---
 
