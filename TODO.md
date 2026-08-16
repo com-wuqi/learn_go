@@ -13,9 +13,9 @@
 > - **如果用户卡住**：先给思路提示，不要直接给完整答案。用户要求看答案时再展示。
 > - **适当扩展学习**：发现用户缺少前置知识时，主动建议插入补充模块。
 > - **检查练习**：按用户要求检查相关习题。
-> - **当前进度快照（2026-08-12）**：
+> - **当前进度快照（2026-08-16）**：
 > >
->   - 第三阶段 3.1 网络编程中：练习 N-S 已完成 ✅，T/U/V 待做
+>   - 第三阶段 3.1 网络编程中：练习 N-V 已完成 ✅（含 U-1 channel 版），补充学习待做
 >   - 补充学习（已讲解、未动手）：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
@@ -44,7 +44,10 @@
 >   - `practice/goroutine.go` — 练习 45-46（goroutine/channel）
 >   - `practice/concurrency.go` — 练习 10-14, 47-53（并发综合）
 >   - `practice/review.go` — 复习题 A-M（综合）
->   - `practice/networking.go` — 练习 N-V（网络编程）
+>   - `practice/networking.go` — 练习 N-V + U-1（网络编程）
+
+- `practice/net_extra.go` — 3.1 补充练习（net.ErrClosed / errgroup / LimitListener）
+- `review/net_extra.go` — 3.1 补充知识讲解（net.ErrClosed / errgroup / LimitListener）
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
       > >
@@ -55,14 +58,14 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                                  |
-|----------|-------------------------------------|
-| 第一阶段     | ✅                                   |
-| 第二阶段     | ✅                                   |
-| **第三阶段** | **🔄 3.1 网络编程中（练习 N-S ✅，T/U/V 待做）** |
-| 第四阶段     | 待开始                                 |
+| 阶段       | 状态                                |
+|----------|-----------------------------------|
+| 第一阶段     | ✅                                 |
+| 第二阶段     | ✅                                 |
+| **第三阶段** | **🔄 3.1 网络编程中（练习 N-V ✅，补充学习待做）** |
+| 第四阶段     | 待开始                               |
 
-> **上次会话：2026-08-12** | 3.1 练习 N-S 完成 ✅（T/U/V 待做）；补充学了优雅关闭宽限期、trackingListener、GetBody
+> **上次会话：2026-08-16** | 3.1 练习 T/U/V 完成 ✅，补做 U-1 channel 版；讨论连接池 capacity 语义、Close 幂等、net.Dial 超时
 
 ---
 
@@ -74,22 +77,50 @@
 - [x] Q: HTTP GET + 超时重试
 - [x] R: HTTP 优雅关闭
 - [x] S: 请求体限流中间件
-- [ ] T: SSE 流式响应
-- [ ] U: TCP 连接池
-- [ ] V: 文件上传
+- [x] T: SSE 流式响应
+- [x] U: TCP 连接池
+- [x] U-1: TCP 连接池（channel 版）
+- [x] V: 文件上传
 
 > 知识演示：`go run cmd/part3/main.go`
+
+### 💡 3.1 关键结论（2026-08-16 沉淀）
+
+- 连接池 `capacity` 是「最大空闲连接数」，不是总连接数：总连接 = 空闲 + 已借出，可超过 capacity
+- `Close` 要幂等：先判断 `isClosed` 再 `close(ch)`，否则二次 Close 会 panic
+- channel 版连接池：`Get`/`Put` 用 `select` + `default` 非阻塞取还，池满则关闭
+- `net.Dial` 超时用 `net.Dialer{Timeout}` + `DialContext`，比 `DialTimeout` 更能响应 context 取消
+- HTTP 响应一旦被 `Write`/`Flush` 提交，后续 `http.Error` 改状态码无效；SSE 事件分隔符是两个真实换行 `\n\n`
 
 ### 📚 3.1 补充学习（建议插入）
 
 - [ ] errgroup（`golang.org/x/sync/errgroup`）— 收集 goroutine 错误 + 协调取消
-- [ ] sync.WaitGroup — 等待一组 goroutine 全部退出
-- [ ] context 取消传播 — ctx.Done() / ctx.Err()
+- [x] sync.WaitGroup — 等待一组 goroutine 全部退出
+- [x] context 取消传播 — ctx.Done() / ctx.Err()
 - [ ] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
-- [ ] sync.Once — 保证关闭/初始化只执行一次
+- [x] sync.Once — 保证关闭/初始化只执行一次
 - [ ] golang.org/x/net/netutil.LimitListener — 限制并发连接数
 
-> 说明：以上概念 2026-08-12 会话已讲解，尚未动手实践，建议下个会话挑 1-2 项补练习。
+> 说明：WaitGroup / sync.Once / context 取消已在 concurrency.go 练过；net.ErrClosed / errgroup / LimitListener 已补 review
+> 讲解和 practice 壳子，待完成实现。
+
+### 🚀 3.2 gRPC 准备清单（2026-08-16 已确认）
+
+- 环境现状：`protoc` / `protoc-gen-go` / `protoc-gen-go-grpc` 均未安装；`go.mod` 已升到 go 1.25.0 并引入 x/net、x/sync，
+  `go.sum` 已有记录
+- 待安装：
+    - protobuf 编译器 `protoc`
+    - Go 插件：`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`、
+      `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`
+    - 运行时依赖：`google.golang.org/grpc`、`google.golang.org/protobuf`
+- 建议练习（由浅入深）：
+    - 3.2-A：定义 `.proto`，生成 Go 代码
+    - 3.2-B：Unary RPC（echo / add）
+    - 3.2-C：Server-streaming RPC
+    - 3.2-D：Client-streaming RPC
+    - 3.2-E：Bidirectional-streaming RPC
+    - 3.2-F：metadata / 超时 / 拦截器（可选）
+- 进入 3.2 前建议先补掉 3.1 补充学习里的 `errgroup`、`LimitListener`（与连接池/网络编程强相关）
 
 ---
 

@@ -6,8 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -179,7 +183,7 @@ func LimitBodyMiddleware(maxBytes int64) func(http.Handler) http.Handler {
 			//defer r.Body.Close()
 			if r.ContentLength > maxBytes {
 				http.Error(w, "Request too large", http.StatusRequestEntityTooLarge)
-				return // 必须，否则会污染相应
+				return // 必须，否则会污染相映
 			}
 			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 			next.ServeHTTP(w, r)
@@ -197,6 +201,31 @@ func LimitBodyMiddleware(maxBytes int64) func(http.Handler) http.Handler {
 //	用 flusher, ok := w.(http.Flusher); ok { flusher.Flush() }
 //	监听 req.Context().Done()
 func StreamHandler(w http.ResponseWriter, req *http.Request) {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	//ctx, cancel := context.WithCancel(req.Context())
+	//defer cancel() // cancel 无效
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache") // 避免中间层缓存
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+		return
+	}
+	for {
+		select {
+		case <-ticker.C:
+			_, err := io.WriteString(w, "data: tick\n\n")
+			if err != nil {
+				//http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			flusher.Flush()
+		case <-req.Context().Done():
+			return
+		}
+	}
+
 }
 
 // 练习 U：连接池 TCP Client
@@ -208,20 +237,134 @@ func StreamHandler(w http.ResponseWriter, req *http.Request) {
 // 提示: 用 chan net.Conn 作缓冲池
 type ConnPool struct {
 	// TODO
+	addr     string
+	capacity int
+	conns    []net.Conn
+	lock     sync.Mutex
 }
 
 func NewConnPool(addr string, capacity int) *ConnPool {
-	return nil
+	conns := make([]net.Conn, 0, capacity)
+	var isOk bool
+	isOk = true
+	for i := 0; i < capacity; i++ {
+		conn, err := net.Dial("tcp", addr)
+		if err != nil {
+			isOk = false
+			break
+		}
+		conns = append(conns, conn)
+	}
+	if !isOk {
+		for _, conn := range conns {
+			_ = conn.Close()
+		}
+		return nil
+	}
+	return &ConnPool{addr: addr, conns: conns, capacity: capacity}
 }
 
-func (p *ConnPool) Get() (io.ReadWriteCloser, error) {
-	return nil, errors.New("not implemented")
+func (p *ConnPool) Get() (net.Conn, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if len(p.conns) == 0 {
+		conn, err := net.Dial("tcp", p.addr)
+		if err != nil {
+			return nil, err
+		}
+		return conn, nil
+	}
+	conn := p.conns[0]
+	p.conns = p.conns[1:]
+	return conn, nil
 }
 
-func (p *ConnPool) Put(conn io.ReadWriteCloser) {
+func (p *ConnPool) Put(conn net.Conn) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if len(p.conns) == p.capacity {
+		_ = conn.Close()
+		return
+	}
+	p.conns = append(p.conns, conn)
+
 }
 
 func (p *ConnPool) Close() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	for _, conn := range p.conns {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println("Error closing connection")
+			continue
+		}
+	}
+}
+
+// 练习 U-1：连接池 TCP Client（channel 版）
+// ============================================================
+// [TODO] 用 chan net.Conn 作缓冲池，实现懒建版连接池
+// NewConnPoolChan 只创建缓冲 channel，不拨号
+// Get() 无空闲连接时 net.Dial 新建
+// Put(conn) 归还连接，池满则关闭
+// Close() 关闭所有空闲连接（注意 close(ch) 与 Put 的并发）
+type ConnPoolChan struct {
+	// TODO
+	addr     string
+	capacity int
+	conns    chan net.Conn
+	lock     sync.Mutex
+	isClosed bool
+}
+
+func NewConnPoolChan(addr string, capacity int) *ConnPoolChan {
+	return &ConnPoolChan{addr: addr, capacity: capacity, conns: make(chan net.Conn, capacity), isClosed: false, lock: sync.Mutex{}}
+}
+
+func (p *ConnPoolChan) Get() (net.Conn, error) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if p.isClosed {
+		return nil, errors.New("connection pool is closed")
+	}
+	select {
+	case conn := <-p.conns:
+		return conn, nil
+	default:
+		conn, err := net.Dial("tcp", p.addr)
+		if err != nil {
+			return nil, err
+		}
+		return conn, nil
+	}
+}
+
+func (p *ConnPoolChan) Put(conn net.Conn) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if p.isClosed {
+		_ = conn.Close()
+		return
+	}
+	select {
+	case p.conns <- conn:
+	default:
+		_ = conn.Close()
+	}
+}
+
+func (p *ConnPoolChan) Close() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	if p.isClosed {
+		return // Close 的幂等
+	}
+	p.isClosed = true
+	close(p.conns)
+	for conn := range p.conns {
+		_ = conn.Close()
+	}
 }
 
 // 练习 V：HTTP 文件上传服务
@@ -231,5 +374,52 @@ func (p *ConnPool) Close() {
 // 返回 JSON: {"filename": "...", "size": N}
 // 提示: req.ParseMultipartForm(maxMemory), req.FormFile("file"), io.Copy
 func UploadHandler(uploadDir string) http.HandlerFunc {
-	return nil
+	uploadHandler := func(w http.ResponseWriter, req *http.Request) {
+		req.Body = http.MaxBytesReader(w, req.Body, 10<<20)
+		if err := req.ParseMultipartForm(2 << 20); err != nil {
+			var maxErr *http.MaxBytesError
+			if errors.As(err, &maxErr) {
+				http.Error(w, maxErr.Error(), http.StatusRequestEntityTooLarge)
+			} else {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+			return
+		}
+		file, header, err := req.FormFile("file")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer func(file multipart.File) {
+			err := file.Close()
+			if err != nil {
+				fmt.Println("Error closing file")
+			}
+		}(file)
+		ext := filepath.Ext(header.Filename) // 后缀
+		name := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+		dst, err := os.Create(filepath.Join(uploadDir, name))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close() // 关闭
+		n, err := io.Copy(dst, file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(map[string]any{
+			"filename":     name,
+			"originalName": header.Filename,
+			"size":         n,
+		})
+		if err != nil {
+			fmt.Println(err)
+		}
+		return
+
+	}
+	return uploadHandler
 }

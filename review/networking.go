@@ -411,7 +411,7 @@ func FlusherDemo() {
 				time.Sleep(300 * time.Millisecond)
 			}
 		}
-	} // codex resume 019fd4dd-ee09-71b1-b62d-a35074646dfa
+	}
 
 	go http.ListenAndServe(":0", http.HandlerFunc(handler))
 	time.Sleep(100 * time.Millisecond)
@@ -569,4 +569,7 @@ func RunPhase3() {
 	FlusherDemo()
 	MaxBytesDemo()
 	UploadDemo()
+	ErrClosedDemo()
+	ErrGroupDemo()
+	LimitListenerDemo()
 }
