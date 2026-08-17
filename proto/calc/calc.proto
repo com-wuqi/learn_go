@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package calc;
+
+option go_package = "LearnGo/api/calc;calc";
+
+// TODO: 定义 AddRequest，两个 int64 字段 a、b
+
+// TODO: 定义 AddReply，一个 int64 字段 result
+
+// TODO: 定义 service Calculator，rpc Add(AddRequest) returns (AddReply)

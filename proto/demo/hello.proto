@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+// package 是 proto 内部的命名空间，避免不同文件符号冲突；
+// 它和 Go 包名无关，真正的 Go 包名看 go_package。
+package hello;
+
+// go_package 决定生成代码的 import 路径和包名：
+// import 路径 = LearnGo/api/demo，包名 = demo。
+option go_package = "LearnGo/api/demo;demo";
+
+// message 是数据结构，字段后的 = 1、= 2 是字段编号（协议里的稳定标识）。
+message HelloRequest {
+  string name = 1;           // string
+  int32 age = 2;             // int32
+  bool is_vip = 3;           // bool，snake_case 会生成 Go 的 IsVip
+  repeated string tags = 4;  // repeated -> Go []string
+  Level level = 5;           // 枚举字段
+  Address address = 6;       // 另一个 message 作为字段类型 -> Go *Address
+}
+
+// proto3 枚举第一个值必须是 0。
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  LEVEL_BASIC = 1;
+  LEVEL_PREMIUM = 2;
+}
+
+message Address {
+  string city = 1;
+  string street = 2;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+// service 定义 RPC；SayHello 是 Unary RPC（一问一答）。
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}

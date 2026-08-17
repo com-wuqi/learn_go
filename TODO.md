@@ -15,7 +15,7 @@
 > - **检查练习**：按用户要求检查相关习题。
 > - **当前进度快照（2026-08-17）**：
 > >
->   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪，3.2-A 演示完成、练习进行中
 >   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
@@ -23,7 +23,8 @@
 >   - 检查练习：先读代码 → `go build ./...` → 必要时写临时测试（`practice/zz_check_test.go`，测完删除）
 > - **环境/工具备忘**：
 > >
->   - 沙箱 bwrap 故障：`apply_patch` 工具不可用，用提权 `exec_command` + Python 定点替换文件，改完 `gofmt -w` 并编译验证
+>   - 沙箱 bwrap 故障（2026-08-17 实测）：`apply_patch` 新增文件可用，但修改/删除已有文件会报 bwrap 错误；用提权
+      `exec_command` + Python 定点替换文件，改完 `gofmt -w` 并编译验证
 >   - gRPC 工具链（用户本地 /home/composer/go/bin，不在默认 PATH）：protoc 35.1、protoc-gen-go 1.36.12、protoc-gen-go-grpc
       1.6.2；使用前 export PATH 或全路径
 >   - 环境有 `HTTP_PROXY=http://127.0.0.1:7897/` 且 `NO_PROXY` 不含 `[::]`：本地 HTTP 演示客户端地址用 `127.0.0.1`（绑
@@ -107,11 +108,17 @@
 
 ### 🚀 3.2 gRPC 准备清单（2026-08-17 工具链已就绪）
 
+- **目录约定（2026-08-17 拆分演示/练习）**：
+    - `proto/demo/hello.proto` — 演示 proto（导师写），生成到 `api/demo/`
+    - `proto/calc/calc.proto` — 练习 proto（用户写），生成到 `api/calc/`
+    - `api/` — protoc 生成代码（不要手改）
+    - `cmd/grpc-demo/main.go` — 快捷运行演示：`go run cmd/grpc-demo/main.go`
+
 - 已安装工具链（用户本地，无需 sudo）：
     - `protoc` 35.1（/home/composer/go/bin/protoc）
     - `protoc-gen-go` 1.36.12
     - `protoc-gen-go-grpc` 1.6.2
-- 已加入 go.mod：`google.golang.org/grpc v1.83.0`、`google.golang.org/protobuf v1.36.12`（暂为 indirect，写代码后 tidy）
+- go.mod 依赖：`google.golang.org/grpc v1.83.0`、`google.golang.org/protobuf v1.36.12` 已 tidy 为直接依赖
 - 注意：`/home/composer/go/bin` 不在默认 PATH，运行 protoc 前需 `export PATH=$PATH:/home/composer/go/bin` 或使用全路径
 - 建议练习（由浅入深）：
     - 3.2-A：定义 `.proto`，生成 Go 代码
