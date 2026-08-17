@@ -13,10 +13,10 @@
 > - **如果用户卡住**：先给思路提示，不要直接给完整答案。用户要求看答案时再展示。
 > - **适当扩展学习**：发现用户缺少前置知识时，主动建议插入补充模块。
 > - **检查练习**：按用户要求检查相关习题。
-> - **当前进度快照（2026-08-16）**：
+> - **当前进度快照（2026-08-17）**：
 > >
->   - 第三阶段 3.1 网络编程中：练习 N-V 已完成 ✅（含 U-1 channel 版），补充学习待做
->   - 补充学习（已讲解、未动手）：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪
+>   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
 >   - 练习题解答写在 `practice/*.go`（用户自己动手）；`review/*.go` 只做大范围复习讲解
@@ -24,6 +24,8 @@
 > - **环境/工具备忘**：
 > >
 >   - 沙箱 bwrap 故障：`apply_patch` 工具不可用，用提权 `exec_command` + Python 定点替换文件，改完 `gofmt -w` 并编译验证
+>   - gRPC 工具链（用户本地 /home/composer/go/bin，不在默认 PATH）：protoc 35.1、protoc-gen-go 1.36.12、protoc-gen-go-grpc
+      1.6.2；使用前 export PATH 或全路径
 >   - 环境有 `HTTP_PROXY=http://127.0.0.1:7897/` 且 `NO_PROXY` 不含 `[::]`：本地 HTTP 演示客户端地址用 `127.0.0.1`（绑
       `:0` 会被代理返回 502）
 >   - `review/networking.go` FlusherDemo 有一行 `} // codex resume <uuid>` 残留注释（未确认是否删除）；UploadDemo 的
@@ -45,9 +47,8 @@
 >   - `practice/concurrency.go` — 练习 10-14, 47-53（并发综合）
 >   - `practice/review.go` — 复习题 A-M（综合）
 >   - `practice/networking.go` — 练习 N-V + U-1（网络编程）
-
-- `practice/net_extra.go` — 3.1 补充练习（net.ErrClosed / errgroup / LimitListener）
-- `review/net_extra.go` — 3.1 补充知识讲解（net.ErrClosed / errgroup / LimitListener）
+>   - `practice/net_extra.go` — 3.1 补充练习（net.ErrClosed / errgroup / LimitListener）
+>   - `review/net_extra.go` — 3.1 补充知识讲解（net.ErrClosed / errgroup / LimitListener）
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
       > >
@@ -58,14 +59,15 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                                |
-|----------|-----------------------------------|
-| 第一阶段     | ✅                                 |
-| 第二阶段     | ✅                                 |
-| **第三阶段** | **🔄 3.1 网络编程中（练习 N-V ✅，补充学习待做）** |
-| 第四阶段     | 待开始                               |
+| 阶段       | 状态                                   |
+|----------|--------------------------------------|
+| 第一阶段     | ✅                                    |
+| 第二阶段     | ✅                                    |
+| **第三阶段** | **🔄 3.2 gRPC 准备中（3.1 网络编程与补充学习 ✅）** |
+| 第四阶段     | 待开始                                  |
 
-> **上次会话：2026-08-16** | 3.1 练习 T/U/V 完成 ✅，补做 U-1 channel 版；讨论连接池 capacity 语义、Close 幂等、net.Dial 超时
+> **上次会话：2026-08-17** | 3.1 补充学习全部完成（net.ErrClosed / errgroup / LimitListener）；安装 gRPC 工具链（protoc
+> 35.1 + 两个插件 + grpc/protobuf 依赖）
 
 ---
 
@@ -94,25 +96,23 @@
 
 ### 📚 3.1 补充学习（建议插入）
 
-- [ ] errgroup（`golang.org/x/sync/errgroup`）— 收集 goroutine 错误 + 协调取消
+- [x] errgroup（`golang.org/x/sync/errgroup`）— 收集 goroutine 错误 + 协调取消
 - [x] sync.WaitGroup — 等待一组 goroutine 全部退出
 - [x] context 取消传播 — ctx.Done() / ctx.Err()
-- [ ] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
+- [x] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
 - [x] sync.Once — 保证关闭/初始化只执行一次
-- [ ] golang.org/x/net/netutil.LimitListener — 限制并发连接数
+- [x] golang.org/x/net/netutil.LimitListener — 限制并发连接数
 
-> 说明：WaitGroup / sync.Once / context 取消已在 concurrency.go 练过；net.ErrClosed / errgroup / LimitListener 已补 review
-> 讲解和 practice 壳子，待完成实现。
+> 说明：以上 6 项已全部完成；net.ErrClosed / errgroup / LimitListener 在 practice/net_extra.go 中实现并验证。
 
-### 🚀 3.2 gRPC 准备清单（2026-08-16 已确认）
+### 🚀 3.2 gRPC 准备清单（2026-08-17 工具链已就绪）
 
-- 环境现状：`protoc` / `protoc-gen-go` / `protoc-gen-go-grpc` 均未安装；`go.mod` 已升到 go 1.25.0 并引入 x/net、x/sync，
-  `go.sum` 已有记录
-- 待安装：
-    - protobuf 编译器 `protoc`
-    - Go 插件：`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`、
-      `go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest`
-    - 运行时依赖：`google.golang.org/grpc`、`google.golang.org/protobuf`
+- 已安装工具链（用户本地，无需 sudo）：
+    - `protoc` 35.1（/home/composer/go/bin/protoc）
+    - `protoc-gen-go` 1.36.12
+    - `protoc-gen-go-grpc` 1.6.2
+- 已加入 go.mod：`google.golang.org/grpc v1.83.0`、`google.golang.org/protobuf v1.36.12`（暂为 indirect，写代码后 tidy）
+- 注意：`/home/composer/go/bin` 不在默认 PATH，运行 protoc 前需 `export PATH=$PATH:/home/composer/go/bin` 或使用全路径
 - 建议练习（由浅入深）：
     - 3.2-A：定义 `.proto`，生成 Go 代码
     - 3.2-B：Unary RPC（echo / add）
@@ -120,14 +120,14 @@
     - 3.2-D：Client-streaming RPC
     - 3.2-E：Bidirectional-streaming RPC
     - 3.2-F：metadata / 超时 / 拦截器（可选）
-- 进入 3.2 前建议先补掉 3.1 补充学习里的 `errgroup`、`LimitListener`（与连接池/网络编程强相关）
+- 3.1 补充学习已全部完成，可直接进入 3.2-A
 
 ---
 
 ## 第三阶段：分布式系统专项 🎯
 
-- [ ] 3.1 网络编程（TCP/HTTP Server/Client）🔄
-- [ ] 3.2 gRPC（protobuf + Unary/Stream RPC）
+- [x] 3.1 网络编程（TCP/HTTP Server/Client）
+- [ ] 3.2 gRPC（protobuf + Unary/Stream RPC）🔄
 - [ ] 3.3 服务注册与发现（etcd）
 - [ ] 3.4 负载均衡
 - [ ] 3.5 分布式共识（Raft）
