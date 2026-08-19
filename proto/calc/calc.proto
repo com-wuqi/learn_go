@@ -6,6 +6,31 @@ option go_package = "LearnGo/api/calc;calc";
 
 // TODO: 定义 AddRequest，两个 int64 字段 a、b
 
+message AddRequest {
+  int64 a = 1;
+  int64 b = 2;
+
+}
+
 // TODO: 定义 AddReply，一个 int64 字段 result
 
+message AddReply {
+  int64 result = 1;
+}
+
 // TODO: 定义 service Calculator，rpc Add(AddRequest) returns (AddReply)
+
+message RangeRequest {
+  int64 from = 1;
+  int64 to = 2;
+}
+
+message NumberReply {
+  int64 value = 1;
+}
+
+service Calculator {
+  rpc Add(AddRequest) returns (AddReply);
+  rpc ListNumbers (RangeRequest) returns (stream NumberReply);
+  rpc Sum (stream AddRequest) returns (NumberReply);
+}

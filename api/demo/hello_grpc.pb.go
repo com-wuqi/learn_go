@@ -22,7 +22,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Greeter_SayHello_FullMethodName = "/hello.Greeter/SayHello"
+	Greeter_SayHello_FullMethodName             = "/hello.Greeter/SayHello"
+	Greeter_SayHelloStream_FullMethodName       = "/hello.Greeter/SayHelloStream"
+	Greeter_SayHelloClientStream_FullMethodName = "/hello.Greeter/SayHelloClientStream"
+	Greeter_SayHelloBidi_FullMethodName         = "/hello.Greeter/SayHelloBidi"
 )
 
 // GreeterClient is the client API for Greeter service.
@@ -32,6 +35,12 @@ const (
 // service 定义 RPC；SayHello 是 Unary RPC（一问一答）。
 type GreeterClient interface {
 	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
+	// SayHelloStream 是 Server-streaming：一个请求，服务端流式返回多条响应。
+	SayHelloStream(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[HelloReply], error)
+	// SayHelloClientStream 是 Client-streaming：客户端流式发多个请求，服务端回一个响应。
+	SayHelloClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[HelloRequest, HelloReply], error)
+	// SayHelloBidi 是 Bidirectional-streaming：客户端和服务端同时流式收发。
+	SayHelloBidi(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HelloRequest, HelloReply], error)
 }
 
 type greeterClient struct {
@@ -52,6 +61,51 @@ func (c *greeterClient) SayHello(ctx context.Context, in *HelloRequest, opts ...
 	return out, nil
 }
 
+func (c *greeterClient) SayHelloStream(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[HelloReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Greeter_ServiceDesc.Streams[0], Greeter_SayHelloStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[HelloRequest, HelloReply]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloStreamClient = grpc.ServerStreamingClient[HelloReply]
+
+func (c *greeterClient) SayHelloClientStream(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[HelloRequest, HelloReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Greeter_ServiceDesc.Streams[1], Greeter_SayHelloClientStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[HelloRequest, HelloReply]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloClientStreamClient = grpc.ClientStreamingClient[HelloRequest, HelloReply]
+
+func (c *greeterClient) SayHelloBidi(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[HelloRequest, HelloReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Greeter_ServiceDesc.Streams[2], Greeter_SayHelloBidi_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[HelloRequest, HelloReply]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloBidiClient = grpc.BidiStreamingClient[HelloRequest, HelloReply]
+
 // GreeterServer is the server API for Greeter service.
 // All implementations must embed UnimplementedGreeterServer
 // for forward compatibility.
@@ -59,6 +113,12 @@ func (c *greeterClient) SayHello(ctx context.Context, in *HelloRequest, opts ...
 // service 定义 RPC；SayHello 是 Unary RPC（一问一答）。
 type GreeterServer interface {
 	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
+	// SayHelloStream 是 Server-streaming：一个请求，服务端流式返回多条响应。
+	SayHelloStream(*HelloRequest, grpc.ServerStreamingServer[HelloReply]) error
+	// SayHelloClientStream 是 Client-streaming：客户端流式发多个请求，服务端回一个响应。
+	SayHelloClientStream(grpc.ClientStreamingServer[HelloRequest, HelloReply]) error
+	// SayHelloBidi 是 Bidirectional-streaming：客户端和服务端同时流式收发。
+	SayHelloBidi(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error
 	mustEmbedUnimplementedGreeterServer()
 }
 
@@ -71,6 +131,15 @@ type UnimplementedGreeterServer struct{}
 
 func (UnimplementedGreeterServer) SayHello(context.Context, *HelloRequest) (*HelloReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method SayHello not implemented")
+}
+func (UnimplementedGreeterServer) SayHelloStream(*HelloRequest, grpc.ServerStreamingServer[HelloReply]) error {
+	return status.Error(codes.Unimplemented, "method SayHelloStream not implemented")
+}
+func (UnimplementedGreeterServer) SayHelloClientStream(grpc.ClientStreamingServer[HelloRequest, HelloReply]) error {
+	return status.Error(codes.Unimplemented, "method SayHelloClientStream not implemented")
+}
+func (UnimplementedGreeterServer) SayHelloBidi(grpc.BidiStreamingServer[HelloRequest, HelloReply]) error {
+	return status.Error(codes.Unimplemented, "method SayHelloBidi not implemented")
 }
 func (UnimplementedGreeterServer) mustEmbedUnimplementedGreeterServer() {}
 func (UnimplementedGreeterServer) testEmbeddedByValue()                 {}
@@ -111,6 +180,31 @@ func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Greeter_SayHelloStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(HelloRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GreeterServer).SayHelloStream(m, &grpc.GenericServerStream[HelloRequest, HelloReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloStreamServer = grpc.ServerStreamingServer[HelloReply]
+
+func _Greeter_SayHelloClientStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GreeterServer).SayHelloClientStream(&grpc.GenericServerStream[HelloRequest, HelloReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloClientStreamServer = grpc.ClientStreamingServer[HelloRequest, HelloReply]
+
+func _Greeter_SayHelloBidi_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(GreeterServer).SayHelloBidi(&grpc.GenericServerStream[HelloRequest, HelloReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Greeter_SayHelloBidiServer = grpc.BidiStreamingServer[HelloRequest, HelloReply]
+
 // Greeter_ServiceDesc is the grpc.ServiceDesc for Greeter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -123,6 +217,23 @@ var Greeter_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Greeter_SayHello_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SayHelloStream",
+			Handler:       _Greeter_SayHelloStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SayHelloClientStream",
+			Handler:       _Greeter_SayHelloClientStream_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "SayHelloBidi",
+			Handler:       _Greeter_SayHelloBidi_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "demo/hello.proto",
 }

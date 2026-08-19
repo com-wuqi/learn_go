@@ -83,6 +83,7 @@ type HelloRequest struct {
 	Tags          []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`                     // repeated -> Go []string
 	Level         Level                  `protobuf:"varint,5,opt,name=level,proto3,enum=hello.Level" json:"level,omitempty"` // 枚举字段
 	Address       *Address               `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`               // 另一个 message 作为字段类型 -> Go *Address
+	Count         int32                  `protobuf:"varint,7,opt,name=count,proto3" json:"count,omitempty"`                  // 控制 server-streaming 返回条数
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -157,6 +158,13 @@ func (x *HelloRequest) GetAddress() *Address {
 		return x.Address
 	}
 	return nil
+}
+
+func (x *HelloRequest) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
 }
 
 type Address struct {
@@ -259,14 +267,15 @@ var File_demo_hello_proto protoreflect.FileDescriptor
 
 const file_demo_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x10demo/hello.proto\x12\x05hello\"\xad\x01\n" +
+	"\x10demo/hello.proto\x12\x05hello\"\xc3\x01\n" +
 	"\fHelloRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
 	"\x03age\x18\x02 \x01(\x05R\x03age\x12\x15\n" +
 	"\x06is_vip\x18\x03 \x01(\bR\x05isVip\x12\x12\n" +
 	"\x04tags\x18\x04 \x03(\tR\x04tags\x12\"\n" +
 	"\x05level\x18\x05 \x01(\x0e2\f.hello.LevelR\x05level\x12(\n" +
-	"\aaddress\x18\x06 \x01(\v2\x0e.hello.AddressR\aaddress\"5\n" +
+	"\aaddress\x18\x06 \x01(\v2\x0e.hello.AddressR\aaddress\x12\x14\n" +
+	"\x05count\x18\a \x01(\x05R\x05count\"5\n" +
 	"\aAddress\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x16\n" +
 	"\x06street\x18\x02 \x01(\tR\x06street\"&\n" +
@@ -276,9 +285,12 @@ const file_demo_hello_proto_rawDesc = "" +
 	"\x05Level\x12\x15\n" +
 	"\x11LEVEL_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vLEVEL_BASIC\x10\x01\x12\x11\n" +
-	"\rLEVEL_PREMIUM\x10\x022=\n" +
+	"\rLEVEL_PREMIUM\x10\x022\xf7\x01\n" +
 	"\aGreeter\x122\n" +
-	"\bSayHello\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReplyB\x17Z\x15LearnGo/api/demo;demob\x06proto3"
+	"\bSayHello\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply\x12:\n" +
+	"\x0eSayHelloStream\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply0\x01\x12@\n" +
+	"\x14SayHelloClientStream\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply(\x01\x12:\n" +
+	"\fSayHelloBidi\x12\x13.hello.HelloRequest\x1a\x11.hello.HelloReply(\x010\x01B\x17Z\x15LearnGo/api/demo;demob\x06proto3"
 
 var (
 	file_demo_hello_proto_rawDescOnce sync.Once
@@ -304,9 +316,15 @@ var file_demo_hello_proto_depIdxs = []int32{
 	0, // 0: hello.HelloRequest.level:type_name -> hello.Level
 	2, // 1: hello.HelloRequest.address:type_name -> hello.Address
 	1, // 2: hello.Greeter.SayHello:input_type -> hello.HelloRequest
-	3, // 3: hello.Greeter.SayHello:output_type -> hello.HelloReply
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
+	1, // 3: hello.Greeter.SayHelloStream:input_type -> hello.HelloRequest
+	1, // 4: hello.Greeter.SayHelloClientStream:input_type -> hello.HelloRequest
+	1, // 5: hello.Greeter.SayHelloBidi:input_type -> hello.HelloRequest
+	3, // 6: hello.Greeter.SayHello:output_type -> hello.HelloReply
+	3, // 7: hello.Greeter.SayHelloStream:output_type -> hello.HelloReply
+	3, // 8: hello.Greeter.SayHelloClientStream:output_type -> hello.HelloReply
+	3, // 9: hello.Greeter.SayHelloBidi:output_type -> hello.HelloReply
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name

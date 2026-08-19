@@ -16,6 +16,7 @@ message HelloRequest {
   repeated string tags = 4;  // repeated -> Go []string
   Level level = 5;           // 枚举字段
   Address address = 6;       // 另一个 message 作为字段类型 -> Go *Address
+  int32 count = 7;           // 控制 server-streaming 返回条数
 }
 
 // proto3 枚举第一个值必须是 0。
@@ -37,4 +38,10 @@ message HelloReply {
 // service 定义 RPC；SayHello 是 Unary RPC（一问一答）。
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply);
+  // SayHelloStream 是 Server-streaming：一个请求，服务端流式返回多条响应。
+  rpc SayHelloStream (HelloRequest) returns (stream HelloReply);
+  // SayHelloClientStream 是 Client-streaming：客户端流式发多个请求，服务端回一个响应。
+  rpc SayHelloClientStream (stream HelloRequest) returns (HelloReply);
+  // SayHelloBidi 是 Bidirectional-streaming：客户端和服务端同时流式收发。
+  rpc SayHelloBidi (stream HelloRequest) returns (stream HelloReply);
 }

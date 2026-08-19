@@ -13,13 +13,15 @@
 > - **如果用户卡住**：先给思路提示，不要直接给完整答案。用户要求看答案时再展示。
 > - **适当扩展学习**：发现用户缺少前置知识时，主动建议插入补充模块。
 > - **检查练习**：按用户要求检查相关习题。
-> - **当前进度快照（2026-08-17）**：
+> - **当前进度快照（2026-08-18）**：
 > >
->   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪，3.2-A 演示完成、练习进行中
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪，3.2-A/3.2-B/3.2-C 完成，3.2-D Client-streaming
+      演示完成、练习进行中
 >   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
 >   - 练习题解答写在 `practice/*.go`（用户自己动手）；`review/*.go` 只做大范围复习讲解
+>   - 用户偏好流程：演示 → 练习 → 检查 → 修正；练习给函数签名 + TODO 提示，不用填空式 `____`
 >   - 检查练习：先读代码 → `go build ./...` → 必要时写临时测试（`practice/zz_check_test.go`，测完删除）
 > - **环境/工具备忘**：
 > >
@@ -50,6 +52,14 @@
 >   - `practice/networking.go` — 练习 N-V + U-1（网络编程）
 >   - `practice/net_extra.go` — 3.1 补充练习（net.ErrClosed / errgroup / LimitListener）
 >   - `review/net_extra.go` — 3.1 补充知识讲解（net.ErrClosed / errgroup / LimitListener）
+>   - `review/grpc_proto.go` — proto 序列化演示
+>   - `review/grpc_unary.go` — Unary RPC 演示
+>   - `review/grpc_stream.go` — Server-streaming 演示
+>   - `review/grpc_client_stream.go` — Client-streaming 演示
+>   - `practice/grpc.go` — 3.2-B Unary 练习
+>   - `practice/grpc_stream.go` — 3.2-C Server-streaming 练习
+>   - `practice/grpc_client_stream.go` — 3.2-D Client-streaming 练习（TODO 待完成）
+>   - `cmd/grpc-demo/` — gRPC 演示快捷运行：`go run cmd/grpc-demo/main.go`
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
       > >
@@ -60,15 +70,14 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                                   |
-|----------|--------------------------------------|
-| 第一阶段     | ✅                                    |
-| 第二阶段     | ✅                                    |
-| **第三阶段** | **🔄 3.2 gRPC 准备中（3.1 网络编程与补充学习 ✅）** |
-| 第四阶段     | 待开始                                  |
+| 阶段       | 状态                                                                  |
+|----------|---------------------------------------------------------------------|
+| 第一阶段     | ✅                                                                   |
+| 第二阶段     | ✅                                                                   |
+| **第三阶段** | **🔄 3.2 gRPC 进行中（Unary/Server-streaming 完成，Client-streaming 进行中）** |
+| 第四阶段     | 待开始                                                                 |
 
-> **上次会话：2026-08-17** | 3.1 补充学习全部完成（net.ErrClosed / errgroup / LimitListener）；安装 gRPC 工具链（protoc
-> 35.1 + 两个插件 + grpc/protobuf 依赖）
+> **上次会话：2026-08-18** | 3.2-A/B/C 完成；3.2-D Client-streaming 演示完成、练习进行中（practice/grpc_client_stream.go 待填）
 
 ---
 
@@ -106,13 +115,16 @@
 
 > 说明：以上 6 项已全部完成；net.ErrClosed / errgroup / LimitListener 在 practice/net_extra.go 中实现并验证。
 
-### 🚀 3.2 gRPC 准备清单（2026-08-17 工具链已就绪）
+### 🚀 3.2 gRPC 进度与关键结论
 
 - **目录约定（2026-08-17 拆分演示/练习）**：
     - `proto/demo/hello.proto` — 演示 proto（导师写），生成到 `api/demo/`
     - `proto/calc/calc.proto` — 练习 proto（用户写），生成到 `api/calc/`
     - `api/` — protoc 生成代码（不要手改）
     - `cmd/grpc-demo/main.go` — 快捷运行演示：`go run cmd/grpc-demo/main.go`
+  - 重新生成：
+    `protoc -I proto --go_out=. --go_opt=module=LearnGo --go-grpc_out=. --go-grpc_opt=module=LearnGo proto/xxx.proto`（先
+    export PATH）
 
 - 已安装工具链（用户本地，无需 sudo）：
     - `protoc` 35.1（/home/composer/go/bin/protoc）
@@ -121,13 +133,24 @@
 - go.mod 依赖：`google.golang.org/grpc v1.83.0`、`google.golang.org/protobuf v1.36.12` 已 tidy 为直接依赖
 - 注意：`/home/composer/go/bin` 不在默认 PATH，运行 protoc 前需 `export PATH=$PATH:/home/composer/go/bin` 或使用全路径
 - 建议练习（由浅入深）：
-    - 3.2-A：定义 `.proto`，生成 Go 代码
-    - 3.2-B：Unary RPC（echo / add）
-    - 3.2-C：Server-streaming RPC
-    - 3.2-D：Client-streaming RPC
-    - 3.2-E：Bidirectional-streaming RPC
-    - 3.2-F：metadata / 超时 / 拦截器（可选）
-- 3.1 补充学习已全部完成，可直接进入 3.2-A
+    - [x] 3.2-A：定义 `.proto`，生成 Go 代码
+    - [x] 3.2-B：Unary RPC（echo / add）
+    - [x] 3.2-C：Server-streaming RPC
+    - [ ] 3.2-D：Client-streaming RPC 🔄
+    - [ ] 3.2-E：Bidirectional-streaming RPC
+    - [ ] 3.2-F：metadata / 超时 / 拦截器（可选）
+- 3.2-A/3.2-B/3.2-C 已完成；3.2-D Client-streaming 演示完成、练习进行中
+- ⚠️ 当前 `go build ./...` 会因 `practice/grpc_client_stream.go` 引用未生成的 `calc.Calculator_SumServer` 而失败；下次先给
+  calc.proto 加 Sum RPC 并重新生成即可恢复
+- **3.2 关键结论（2026-08-18 沉淀）**：
+    - `grpc.NewClient`（及旧 `grpc.Dial`）必须显式传 transport credentials，否则返回 `no transport security set`；本地明文用
+      `grpc.WithTransportCredentials(insecure.NewCredentials())`
+    - Unary server 方法带 `ctx context.Context`；流式方法不带 ctx，从 `stream.Context()` 取
+    - 实现 server 必须嵌入 `UnimplementedXxxServer`（向前兼容）
+    - Server-streaming：服务端 `stream.Send`，客户端 `Recv` 直到 `io.EOF`
+    - Client-streaming：客户端 `Send` + `CloseAndRecv`，服务端 `Recv` 直到 `io.EOF` 后 `SendAndClose`
+    - `GracefulStop`/`Stop` 会关闭 listener，不要再手动 `ln.Close()`（避免 double-close）
+    - 流式 Recv 循环里非 `io.EOF` 错误要 `return`，避免访问 nil 响应
 
 ---
 
