@@ -22,6 +22,7 @@ const (
 	Calculator_Add_FullMethodName         = "/calc.Calculator/Add"
 	Calculator_ListNumbers_FullMethodName = "/calc.Calculator/ListNumbers"
 	Calculator_Sum_FullMethodName         = "/calc.Calculator/Sum"
+	Calculator_EchoSum_FullMethodName     = "/calc.Calculator/EchoSum"
 )
 
 // CalculatorClient is the client API for Calculator service.
@@ -31,6 +32,7 @@ type CalculatorClient interface {
 	Add(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddReply, error)
 	ListNumbers(ctx context.Context, in *RangeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NumberReply], error)
 	Sum(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[AddRequest, NumberReply], error)
+	EchoSum(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[AddRequest, AddReply], error)
 }
 
 type calculatorClient struct {
@@ -83,6 +85,19 @@ func (c *calculatorClient) Sum(ctx context.Context, opts ...grpc.CallOption) (gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Calculator_SumClient = grpc.ClientStreamingClient[AddRequest, NumberReply]
 
+func (c *calculatorClient) EchoSum(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[AddRequest, AddReply], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Calculator_ServiceDesc.Streams[2], Calculator_EchoSum_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[AddRequest, AddReply]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Calculator_EchoSumClient = grpc.BidiStreamingClient[AddRequest, AddReply]
+
 // CalculatorServer is the server API for Calculator service.
 // All implementations must embed UnimplementedCalculatorServer
 // for forward compatibility.
@@ -90,6 +105,7 @@ type CalculatorServer interface {
 	Add(context.Context, *AddRequest) (*AddReply, error)
 	ListNumbers(*RangeRequest, grpc.ServerStreamingServer[NumberReply]) error
 	Sum(grpc.ClientStreamingServer[AddRequest, NumberReply]) error
+	EchoSum(grpc.BidiStreamingServer[AddRequest, AddReply]) error
 	mustEmbedUnimplementedCalculatorServer()
 }
 
@@ -108,6 +124,9 @@ func (UnimplementedCalculatorServer) ListNumbers(*RangeRequest, grpc.ServerStrea
 }
 func (UnimplementedCalculatorServer) Sum(grpc.ClientStreamingServer[AddRequest, NumberReply]) error {
 	return status.Error(codes.Unimplemented, "method Sum not implemented")
+}
+func (UnimplementedCalculatorServer) EchoSum(grpc.BidiStreamingServer[AddRequest, AddReply]) error {
+	return status.Error(codes.Unimplemented, "method EchoSum not implemented")
 }
 func (UnimplementedCalculatorServer) mustEmbedUnimplementedCalculatorServer() {}
 func (UnimplementedCalculatorServer) testEmbeddedByValue()                    {}
@@ -166,6 +185,13 @@ func _Calculator_Sum_Handler(srv interface{}, stream grpc.ServerStream) error {
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Calculator_SumServer = grpc.ClientStreamingServer[AddRequest, NumberReply]
 
+func _Calculator_EchoSum_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(CalculatorServer).EchoSum(&grpc.GenericServerStream[AddRequest, AddReply]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Calculator_EchoSumServer = grpc.BidiStreamingServer[AddRequest, AddReply]
+
 // Calculator_ServiceDesc is the grpc.ServiceDesc for Calculator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -187,6 +213,12 @@ var Calculator_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Sum",
 			Handler:       _Calculator_Sum_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "EchoSum",
+			Handler:       _Calculator_EchoSum_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

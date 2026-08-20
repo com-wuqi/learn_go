@@ -228,12 +228,13 @@ const file_calc_calc_proto_rawDesc = "" +
 	"\x04from\x18\x01 \x01(\x03R\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\x03R\x02to\"#\n" +
 	"\vNumberReply\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\x03R\x05value2\x9b\x01\n" +
+	"\x05value\x18\x01 \x01(\x03R\x05value2\xcc\x01\n" +
 	"\n" +
 	"Calculator\x12'\n" +
 	"\x03Add\x12\x10.calc.AddRequest\x1a\x0e.calc.AddReply\x126\n" +
 	"\vListNumbers\x12\x12.calc.RangeRequest\x1a\x11.calc.NumberReply0\x01\x12,\n" +
-	"\x03Sum\x12\x10.calc.AddRequest\x1a\x11.calc.NumberReply(\x01B\x17Z\x15LearnGo/api/calc;calcb\x06proto3"
+	"\x03Sum\x12\x10.calc.AddRequest\x1a\x11.calc.NumberReply(\x01\x12/\n" +
+	"\aEchoSum\x12\x10.calc.AddRequest\x1a\x0e.calc.AddReply(\x010\x01B\x17Z\x15LearnGo/api/calc;calcb\x06proto3"
 
 var (
 	file_calc_calc_proto_rawDescOnce sync.Once
@@ -258,11 +259,13 @@ var file_calc_calc_proto_depIdxs = []int32{
 	0, // 0: calc.Calculator.Add:input_type -> calc.AddRequest
 	2, // 1: calc.Calculator.ListNumbers:input_type -> calc.RangeRequest
 	0, // 2: calc.Calculator.Sum:input_type -> calc.AddRequest
-	1, // 3: calc.Calculator.Add:output_type -> calc.AddReply
-	3, // 4: calc.Calculator.ListNumbers:output_type -> calc.NumberReply
-	3, // 5: calc.Calculator.Sum:output_type -> calc.NumberReply
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	0, // 3: calc.Calculator.EchoSum:input_type -> calc.AddRequest
+	1, // 4: calc.Calculator.Add:output_type -> calc.AddReply
+	3, // 5: calc.Calculator.ListNumbers:output_type -> calc.NumberReply
+	3, // 6: calc.Calculator.Sum:output_type -> calc.NumberReply
+	1, // 7: calc.Calculator.EchoSum:output_type -> calc.AddReply
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

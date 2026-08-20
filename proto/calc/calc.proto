@@ -33,4 +33,5 @@ service Calculator {
   rpc Add(AddRequest) returns (AddReply);
   rpc ListNumbers (RangeRequest) returns (stream NumberReply);
   rpc Sum (stream AddRequest) returns (NumberReply);
+  rpc EchoSum (stream AddRequest) returns (stream AddReply);
 }
