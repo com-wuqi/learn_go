@@ -17,6 +17,7 @@ message HelloRequest {
   Level level = 5;           // 枚举字段
   Address address = 6;       // 另一个 message 作为字段类型 -> Go *Address
   int32 count = 7;           // 控制 server-streaming 返回条数
+  int32 sleep_ms = 8;        // 演示超时：服务端人为延迟（毫秒）
 }
 
 // proto3 枚举第一个值必须是 0。

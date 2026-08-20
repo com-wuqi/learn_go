@@ -21,6 +21,18 @@ type greeterServer struct {
 }
 
 func (s *greeterServer) SayHello(ctx context.Context, req *demo.HelloRequest) (*demo.HelloReply, error) {
+	// 演示超时：SleepMs > 0 时服务端故意延迟，期间响应 ctx 取消。
+	if req.GetSleepMs() > 0 {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(time.Duration(req.GetSleepMs()) * time.Millisecond):
+		}
+	}
+	// 演示 metadata：拦截器把 x-user-id 放进了 ctx。
+	if user, ok := ctx.Value(userKey).(string); ok && user != "" {
+		return &demo.HelloReply{Message: fmt.Sprintf("Hello, %s! (user=%s)", req.GetName(), user)}, nil
+	}
 	return &demo.HelloReply{Message: "Hello, " + req.GetName() + "!"}, nil
 }
 

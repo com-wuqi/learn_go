@@ -77,13 +77,14 @@ func (Level) EnumDescriptor() ([]byte, []int) {
 // message 是数据结构，字段后的 = 1、= 2 是字段编号（协议里的稳定标识）。
 type HelloRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                     // string
-	Age           int32                  `protobuf:"varint,2,opt,name=age,proto3" json:"age,omitempty"`                      // int32
-	IsVip         bool                   `protobuf:"varint,3,opt,name=is_vip,json=isVip,proto3" json:"is_vip,omitempty"`     // bool，snake_case 会生成 Go 的 IsVip
-	Tags          []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`                     // repeated -> Go []string
-	Level         Level                  `protobuf:"varint,5,opt,name=level,proto3,enum=hello.Level" json:"level,omitempty"` // 枚举字段
-	Address       *Address               `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`               // 另一个 message 作为字段类型 -> Go *Address
-	Count         int32                  `protobuf:"varint,7,opt,name=count,proto3" json:"count,omitempty"`                  // 控制 server-streaming 返回条数
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                       // string
+	Age           int32                  `protobuf:"varint,2,opt,name=age,proto3" json:"age,omitempty"`                        // int32
+	IsVip         bool                   `protobuf:"varint,3,opt,name=is_vip,json=isVip,proto3" json:"is_vip,omitempty"`       // bool，snake_case 会生成 Go 的 IsVip
+	Tags          []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`                       // repeated -> Go []string
+	Level         Level                  `protobuf:"varint,5,opt,name=level,proto3,enum=hello.Level" json:"level,omitempty"`   // 枚举字段
+	Address       *Address               `protobuf:"bytes,6,opt,name=address,proto3" json:"address,omitempty"`                 // 另一个 message 作为字段类型 -> Go *Address
+	Count         int32                  `protobuf:"varint,7,opt,name=count,proto3" json:"count,omitempty"`                    // 控制 server-streaming 返回条数
+	SleepMs       int32                  `protobuf:"varint,8,opt,name=sleep_ms,json=sleepMs,proto3" json:"sleep_ms,omitempty"` // 演示超时：服务端人为延迟（毫秒）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,6 +164,13 @@ func (x *HelloRequest) GetAddress() *Address {
 func (x *HelloRequest) GetCount() int32 {
 	if x != nil {
 		return x.Count
+	}
+	return 0
+}
+
+func (x *HelloRequest) GetSleepMs() int32 {
+	if x != nil {
+		return x.SleepMs
 	}
 	return 0
 }
@@ -267,7 +275,7 @@ var File_demo_hello_proto protoreflect.FileDescriptor
 
 const file_demo_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x10demo/hello.proto\x12\x05hello\"\xc3\x01\n" +
+	"\x10demo/hello.proto\x12\x05hello\"\xde\x01\n" +
 	"\fHelloRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x10\n" +
 	"\x03age\x18\x02 \x01(\x05R\x03age\x12\x15\n" +
@@ -275,7 +283,8 @@ const file_demo_hello_proto_rawDesc = "" +
 	"\x04tags\x18\x04 \x03(\tR\x04tags\x12\"\n" +
 	"\x05level\x18\x05 \x01(\x0e2\f.hello.LevelR\x05level\x12(\n" +
 	"\aaddress\x18\x06 \x01(\v2\x0e.hello.AddressR\aaddress\x12\x14\n" +
-	"\x05count\x18\a \x01(\x05R\x05count\"5\n" +
+	"\x05count\x18\a \x01(\x05R\x05count\x12\x19\n" +
+	"\bsleep_ms\x18\b \x01(\x05R\asleepMs\"5\n" +
 	"\aAddress\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x16\n" +
 	"\x06street\x18\x02 \x01(\tR\x06street\"&\n" +

@@ -8,4 +8,7 @@ func main() {
 	review.RunServerStreamDemo()
 	review.RunClientStreamDemo()
 	review.RunBidiDemo()
+	review.RunMetadataDemo()
+	review.RunTimeoutDemo()
+	review.RunInterceptorDemo()
 }
