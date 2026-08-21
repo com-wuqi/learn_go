@@ -11,4 +11,7 @@ func main() {
 	review.RunMetadataDemo()
 	review.RunTimeoutDemo()
 	review.RunInterceptorDemo()
+	review.RunStatusDemo()
+	review.RunRetryDemo()
+	review.RunResolverDemo()
 }

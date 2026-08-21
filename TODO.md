@@ -15,8 +15,7 @@
 > - **检查练习**：按用户要求检查相关习题。
 > - **当前进度快照（2026-08-18）**：
 > >
->   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 工具链已就绪，3.2-A/3.2-B/3.2-C 完成，3.2-D Client-streaming
-      演示完成、练习进行中
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 全部完成（A-F）；3.2-S gRPC 补充学习进行中（批1 演示完成）
 >   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
@@ -59,6 +58,10 @@
 >   - `practice/grpc.go` — 3.2-B Unary 练习
 >   - `practice/grpc_stream.go` — 3.2-C Server-streaming 练习
 >   - `practice/grpc_client_stream.go` — 3.2-D Client-streaming 练习（TODO 待完成）
+>   - `review/grpc_bidi.go` / `review/grpc_advanced.go` — 3.2-E/F 演示
+>   - `review/grpc_status.go` / `review/grpc_retry.go` / `review/grpc_resolver.go` — 3.2-S 批1 演示
+>   - `practice/grpc_bidi.go` / `practice/grpc_advanced.go` — 3.2-E/F 练习
+>   - `practice/grpc_extra.go` — 3.2-S 练习（status/重试）
 >   - `cmd/grpc-demo/` — gRPC 演示快捷运行：`go run cmd/grpc-demo/main.go`
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
@@ -70,14 +73,14 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                                                                  |
-|----------|---------------------------------------------------------------------|
-| 第一阶段     | ✅                                                                   |
-| 第二阶段     | ✅                                                                   |
-| **第三阶段** | **🔄 3.2 gRPC 进行中（Unary/Server-streaming 完成，Client-streaming 进行中）** |
-| 第四阶段     | 待开始                                                                 |
+| 阶段       | 状态                                        |
+|----------|-------------------------------------------|
+| 第一阶段     | ✅                                         |
+| 第二阶段     | ✅                                         |
+| **第三阶段** | **🔄 3.2-S gRPC 补充学习进行中（3.2 gRPC 已全部完成）** |
+| 第四阶段     | 待开始                                       |
 
-> **上次会话：2026-08-18** | 3.2-A/B/C 完成；3.2-D Client-streaming 演示完成、练习进行中（practice/grpc_client_stream.go 待填）
+> **上次会话：2026-08-21** | 3.2 全部完成（A-F）；3.2-S 批1（status/重试/resolver）演示完成，练习进行中
 
 ---
 
@@ -136,12 +139,11 @@
     - [x] 3.2-A：定义 `.proto`，生成 Go 代码
     - [x] 3.2-B：Unary RPC（echo / add）
     - [x] 3.2-C：Server-streaming RPC
-    - [ ] 3.2-D：Client-streaming RPC 🔄
-    - [ ] 3.2-E：Bidirectional-streaming RPC
-    - [ ] 3.2-F：metadata / 超时 / 拦截器（可选）
-- 3.2-A/3.2-B/3.2-C 已完成；3.2-D Client-streaming 演示完成、练习进行中
-- ⚠️ 当前 `go build ./...` 会因 `practice/grpc_client_stream.go` 引用未生成的 `calc.Calculator_SumServer` 而失败；下次先给
-  calc.proto 加 Sum RPC 并重新生成即可恢复
+  - [x] 3.2-D：Client-streaming RPC
+  - [x] 3.2-E：Bidirectional-streaming RPC
+  - [x] 3.2-F：metadata / 超时 / 拦截器（可选）
+- 3.2-A ~ 3.2-F 全部完成（2026-08-21 check 通过）
+- ⚠️ 已解决：calc.proto 已加 Sum/EchoSum RPC，`go build ./...` 通过
 - **3.2 关键结论（2026-08-18 沉淀）**：
     - `grpc.NewClient`（及旧 `grpc.Dial`）必须显式传 transport credentials，否则返回 `no transport security set`；本地明文用
       `grpc.WithTransportCredentials(insecure.NewCredentials())`
@@ -151,8 +153,31 @@
     - Client-streaming：客户端 `Send` + `CloseAndRecv`，服务端 `Recv` 直到 `io.EOF` 后 `SendAndClose`
     - `GracefulStop`/`Stop` 会关闭 listener，不要再手动 `ln.Close()`（避免 double-close）
     - 流式 Recv 循环里非 `io.EOF` 错误要 `return`，避免访问 nil 响应
+- **3.2 补充结论（2026-08-21 沉淀）**：
+  - EOF 是正常收尾信号：Recv 循环里 EOF 分支要 `return nil`，当错误返回会让对端看到 Unknown/EOF
+  - errgroup 的 join 语义：任何退出路径都要 `Wait()`，否则 goroutine 可能比函数晚一步退出
+  - metadata 是 context.WithValue 之上的一层协议化封装：key 自动小写、值限 string、`-bin` 后缀走 base64；WithValue 只做进程内分发
+  - 拦截器不注册就是死代码：ChainUnaryInterceptor 挂到 server/client 上才生效；链式用 Chain
+  - 双向流 ctx 覆盖整条流而不是每条消息；单条超时需自己 race，且超时后流作废（不能并发 Recv）
+  - status：code 分类 + status.FromError + WithDetails 附加任意 proto 消息作为错误详情
+  - retryPolicy：只重试 retryableStatusCodes 里的错误；自定义 resolver（Build/UpdateState）+ round_robin 实现多后端分发
 
 ---
+
+### 🧩 3.2-S gRPC 补充学习（2026-08-21 新增）
+
+> 目标：补上 gRPC 生产级缺口 + 分布式前置知识，分三批推进。
+
+- [x] status 错误处理（codes / status.FromError / WithDetails）
+- [x] 重试策略（retryPolicy / retryableStatusCodes）
+- [x] resolver + 负载均衡（自定义 resolver / round_robin）
+- [ ] TLS / mTLS（credentials.NewTLS）
+- [ ] keepalive（长连接保活 / 半开连接探测）
+- [ ] 连接状态机（ConnectivityState）
+- [ ] 流式拦截器（ChainStreamInterceptor）
+- [ ] 压缩 + 消息大小限制
+- [ ] health 检查（grpc_health_v1）
+- [ ] 反射 + grpcurl 调试
 
 ## 第三阶段：分布式系统专项 🎯
 

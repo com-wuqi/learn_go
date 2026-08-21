@@ -17,6 +17,9 @@ import (
 // ctxKey 用于把 metadata 解析出的用户信息放进 context。
 type ctxKey string
 
+// context.WithValue 进程内沿调用链传数据
+// metadata.AppendToOutgoingContext 把 KV 打包成 HTTP/2 头发给对端
+
 const userKey ctxKey = "user"
 
 // metadataUnaryServerInterceptor 从 incoming metadata 读取 x-user-id，注入 ctx。
