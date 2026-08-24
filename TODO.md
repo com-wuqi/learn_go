@@ -15,7 +15,7 @@
 > - **检查练习**：按用户要求检查相关习题。
 > - **当前进度快照（2026-08-18）**：
 > >
->   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 全部完成（A-F）；3.2-S gRPC 补充学习进行中（批1 演示完成）
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 全部完成（A-F）；3.2-S gRPC 补充学习进行中（批1 完成；批2 演示完成、练习进行中）
 >   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
@@ -62,10 +62,12 @@
 >   - `review/grpc_status.go` / `review/grpc_retry.go` / `review/grpc_resolver.go` — 3.2-S 批1 演示
 >   - `practice/grpc_bidi.go` / `practice/grpc_advanced.go` — 3.2-E/F 练习
 >   - `practice/grpc_extra.go` — 3.2-S 练习（status/重试）
+>   - `review/grpc_tls.go` / `review/grpc_keepalive.go` / `review/grpc_connstate.go` — 3.2-S 批2 演示
+>   - `practice/grpc_net.go` — 3.2-S 批2 练习（TLS/连接状态机）
 >   - `cmd/grpc-demo/` — gRPC 演示快捷运行：`go run cmd/grpc-demo/main.go`
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
-      > >
+>   >
 - `go run cmd/part3/main.go` — 运行第三阶段知识演示
 > >   - 练习验证：直接 `go build ./practice/...` 检查编译
 
@@ -73,14 +75,14 @@
 
 ## 🎯 当前进度
 
-| 阶段       | 状态                                        |
-|----------|-------------------------------------------|
-| 第一阶段     | ✅                                         |
-| 第二阶段     | ✅                                         |
-| **第三阶段** | **🔄 3.2-S gRPC 补充学习进行中（3.2 gRPC 已全部完成）** |
-| 第四阶段     | 待开始                                       |
+| 阶段         | 状态                                                       |
+|--------------|------------------------------------------------------------|
+| 第一阶段     | ✅                                                         |
+| 第二阶段     | ✅                                                         |
+| **第三阶段** | **🔄 3.2-S 批2 进行中（批1 status/重试/resolver 已完成）** |
+| 第四阶段     | 待开始                                                     |
 
-> **上次会话：2026-08-21** | 3.2 全部完成（A-F）；3.2-S 批1（status/重试/resolver）演示完成，练习进行中
+> **上次会话：2026-08-23** | 3.2-S 批2（TLS/keepalive/连接状态机）演示完成，练习进行中
 
 ---
 

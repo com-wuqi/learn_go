@@ -14,4 +14,7 @@ func main() {
 	review.RunStatusDemo()
 	review.RunRetryDemo()
 	review.RunResolverDemo()
+	review.RunTlsDemo()
+	review.RunKeepaliveDemo()
+	review.RunConnStateDemo()
 }
