@@ -15,7 +15,8 @@
 > - **检查练习**：按用户要求检查相关习题。
 > - **当前进度快照（2026-08-18）**：
 > >
->   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 全部完成（A-F）；3.2-S gRPC 补充学习进行中（批1 完成；批2 演示完成、练习进行中）
+>   - 第三阶段 3.1 网络编程与补充学习已完成 ✅；3.2 gRPC 全部完成（A-F）；3.2-S gRPC 补充学习进行中（批1 完成；批2/批3
+      演示完成，练习进行中）
 >   - 补充学习已全部完成：errgroup / WaitGroup / context 取消 / net.ErrClosed / sync.Once / LimitListener
 > - **项目约定（用户 2026-08-11 明确）**：
 > >
@@ -64,6 +65,9 @@
 >   - `practice/grpc_extra.go` — 3.2-S 练习（status/重试）
 >   - `review/grpc_tls.go` / `review/grpc_keepalive.go` / `review/grpc_connstate.go` — 3.2-S 批2 演示
 >   - `practice/grpc_net.go` — 3.2-S 批2 练习（TLS/连接状态机）
+>   - `review/grpc_stream_interceptor.go` / `review/grpc_sizes.go` / `review/grpc_health.go` /
+      `review/grpc_reflection.go` — 3.2-S 批3 演示
+>   - `practice/grpc_tools.go` — 3.2-S 批3 练习（流式拦截器/压缩/health/反射）
 >   - `cmd/grpc-demo/` — gRPC 演示快捷运行：`go run cmd/grpc-demo/main.go`
 >   - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
 > > - **运行方式**：
@@ -75,14 +79,14 @@
 
 ## 🎯 当前进度
 
-| 阶段         | 状态                                                       |
-|--------------|------------------------------------------------------------|
-| 第一阶段     | ✅                                                         |
-| 第二阶段     | ✅                                                         |
-| **第三阶段** | **🔄 3.2-S 批2 进行中（批1 status/重试/resolver 已完成）** |
-| 第四阶段     | 待开始                                                     |
+| 阶段         | 状态                                                        |
+|--------------|-------------------------------------------------------------|
+| 第一阶段     | ✅                                                          |
+| 第二阶段     | ✅                                                          |
+| **第三阶段** | **🔄 3.2-S 批2/批3 进行中（批1 已完成，批2/批3 演示完成）** |
+| 第四阶段     | 待开始                                                      |
 
-> **上次会话：2026-08-23** | 3.2-S 批2（TLS/keepalive/连接状态机）演示完成，练习进行中
+> **上次会话：2026-08-25** | 3.2-S 批2 练习进行中（TLS 已过）；批3（流式拦截器/压缩与限长/health/反射）演示完成，练习待写
 
 ---
 
@@ -113,7 +117,7 @@
 
 - [x] errgroup（`golang.org/x/sync/errgroup`）— 收集 goroutine 错误 + 协调取消
 - [x] sync.WaitGroup — 等待一组 goroutine 全部退出
-- [x] context 取消传播 — ctx.Done() / ctx.Err()
+- [x] context 取消传播 — ctx1.Done () / ctx1.Err ()
 - [x] net.ErrClosed + errors.Is — 区分正常关闭与真实错误
 - [x] sync.Once — 保证关闭/初始化只执行一次
 - [x] golang.org/x/net/netutil.LimitListener — 限制并发连接数
@@ -149,7 +153,7 @@
 - **3.2 关键结论（2026-08-18 沉淀）**：
     - `grpc.NewClient`（及旧 `grpc.Dial`）必须显式传 transport credentials，否则返回 `no transport security set`；本地明文用
       `grpc.WithTransportCredentials(insecure.NewCredentials())`
-    - Unary server 方法带 `ctx context.Context`；流式方法不带 ctx，从 `stream.Context()` 取
+  - Unary server 方法带 `ctx1 context.Context`；流式方法不带 ctx1，从 `stream.Context()` 取
     - 实现 server 必须嵌入 `UnimplementedXxxServer`（向前兼容）
     - Server-streaming：服务端 `stream.Send`，客户端 `Recv` 直到 `io.EOF`
     - Client-streaming：客户端 `Send` + `CloseAndRecv`，服务端 `Recv` 直到 `io.EOF` 后 `SendAndClose`
@@ -160,7 +164,7 @@
   - errgroup 的 join 语义：任何退出路径都要 `Wait()`，否则 goroutine 可能比函数晚一步退出
   - metadata 是 context.WithValue 之上的一层协议化封装：key 自动小写、值限 string、`-bin` 后缀走 base64；WithValue 只做进程内分发
   - 拦截器不注册就是死代码：ChainUnaryInterceptor 挂到 server/client 上才生效；链式用 Chain
-  - 双向流 ctx 覆盖整条流而不是每条消息；单条超时需自己 race，且超时后流作废（不能并发 Recv）
+  - 双向流 ctx1 覆盖整条流而不是每条消息；单条超时需自己 race，且超时后流作废（不能并发 Recv）
   - status：code 分类 + status.FromError + WithDetails 附加任意 proto 消息作为错误详情
   - retryPolicy：只重试 retryableStatusCodes 里的错误；自定义 resolver（Build/UpdateState）+ round_robin 实现多后端分发
 

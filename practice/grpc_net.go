@@ -1,6 +1,7 @@
 package practice
 
 import (
+	"LearnGo/api/calc"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -8,12 +9,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"errors"
+	"fmt"
 	"math/big"
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // ============================================================
@@ -102,7 +106,12 @@ func tlsClientCreds(caPool *x509.CertPool, clientCert tls.Certificate, serverNam
 // （ClientAuth: tls.RequireAndVerifyClientCert + ClientCAs: caPool）。
 func tlsServerCreds(serverCert tls.Certificate, caPool *x509.CertPool, requireClientCert bool) credentials.TransportCredentials {
 	// TODO
-	return nil
+	baseConfig := &tls.Config{Certificates: []tls.Certificate{serverCert}}
+	if requireClientCert {
+		baseConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		baseConfig.ClientCAs = caPool
+	}
+	return credentials.NewTLS(baseConfig)
 }
 
 // RunTlsPractice 生成 CA/证书并跑四种场景（完整流程参考 review/grpc_tls.go 的 RunTlsDemo）：
@@ -111,12 +120,158 @@ func tlsServerCreds(serverCert tls.Certificate, caPool *x509.CertPool, requireCl
 // 实现本函数时需要补充 import：fmt、net、time、crypto/tls、calc、insecure（如需）。
 func RunTlsPractice() {
 	// TODO
+	cert, key := newSelfSignedCA()
+	serverCert := issueCert(cert, key, "server", true)
+	clientCert := issueCert(cert, key, "client", false)
+	caPool := newCAPool(cert)
+
+	ln1, err := net.Listen("tcp", "127.0.0.1:0")
+	// TLS
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	ln2, err := net.Listen("tcp", "127.0.0.1:0")
+	// mTLS
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	server1 := grpc.NewServer(grpc.Creds(tlsServerCreds(serverCert, caPool, false)))
+	// TLS
+	calc.RegisterCalculatorServer(server1, &calculatorServer{})
+	go func() {
+		err := server1.Serve(ln1)
+		if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			fmt.Println(err)
+		}
+	}()
+	defer server1.GracefulStop()
+
+	server2 := grpc.NewServer(grpc.Creds(tlsServerCreds(serverCert, caPool, true)))
+	// mTLS
+	calc.RegisterCalculatorServer(server2, &calculatorServer{})
+	go func() {
+		err := server2.Serve(ln2)
+		if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			fmt.Println(err)
+		}
+	}()
+	defer server2.GracefulStop()
+
+	conn1, err := grpc.NewClient(
+		ln1.Addr().String(),
+		grpc.WithTransportCredentials(tlsClientCreds(caPool, tls.Certificate{}, "127.0.0.1", false)),
+		// TLS-success
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(conn1 *grpc.ClientConn) {
+		err := conn1.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn1)
+	client1 := calc.NewCalculatorClient(conn1)
+	ctx1, cancel1 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel1()
+	resp1, err := client1.Add(ctx1, &calc.AddRequest{A: 1, B: 2})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp1.GetResult())
+	}
+
+	conn2, err := grpc.NewClient(
+		ln1.Addr().String(),
+		grpc.WithTransportCredentials(tlsClientCreds(x509.NewCertPool(), tls.Certificate{}, "127.0.0.1", false)),
+		// TLS-fail
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(conn2 *grpc.ClientConn) {
+		err := conn2.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn2)
+	client2 := calc.NewCalculatorClient(conn2)
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel2()
+	resp2, err := client2.Add(ctx2, &calc.AddRequest{A: 1, B: 2})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp2.GetResult())
+	}
+
+	conn3, err := grpc.NewClient(
+		ln2.Addr().String(),
+		grpc.WithTransportCredentials(tlsClientCreds(caPool, clientCert, "127.0.0.1", true)),
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(conn3 *grpc.ClientConn) {
+		err := conn3.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn3)
+	client3 := calc.NewCalculatorClient(conn3)
+	ctx3, cancel3 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel3()
+	resp3, err := client3.Add(ctx3, &calc.AddRequest{A: 1, B: 2})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp3.GetResult())
+	}
+
+	conn4, err := grpc.NewClient(
+		ln2.Addr().String(),
+		grpc.WithTransportCredentials(tlsClientCreds(caPool, tls.Certificate{}, "127.0.0.1", false)),
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(conn4 *grpc.ClientConn) {
+		err := conn4.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn4)
+	client4 := calc.NewCalculatorClient(conn4)
+	ctx4, cancel4 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel4()
+	resp4, err := client4.Add(ctx4, &calc.AddRequest{A: 1, B: 2})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp4.GetResult())
+	}
+
 }
 
 // watchCalcConnState 打印连接状态变化，直到 ctx 结束。
 // 提示：state := conn.GetState() 打印，再 conn.WaitForStateChange(ctx, state) 等下一次变化。
 func watchCalcConnState(conn *grpc.ClientConn, ctx context.Context, label string) {
 	// TODO
+	for {
+		state := conn.GetState()
+		fmt.Printf("[%s] state=%s\n", label, state)
+		if !conn.WaitForStateChange(ctx, state) {
+			return
+		}
+	}
 }
 
 // RunConnStatePractice 起 server、建 client（不 Connect），观察状态机：
@@ -125,4 +280,84 @@ func watchCalcConnState(conn *grpc.ClientConn, ctx context.Context, label string
 // 实现本函数时需要补充 import：fmt、net、time、calc、insecure。
 func RunConnStatePractice() {
 	// TODO
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	addr := ln.Addr().String()
+	srv := grpc.NewServer()
+	calc.RegisterCalculatorServer(srv, &calculatorServer{})
+	go func() {
+		err := srv.Serve(ln)
+		if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			fmt.Println(err)
+		}
+	}()
+
+	conn, err := grpc.NewClient(ln.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
+	defer cancel()
+
+	go watchCalcConnState(conn, ctx, "RunConnStatePractice")
+
+	fmt.Printf("[RunConnStatePractice] state=%s\n", conn.GetState())
+	conn.Connect()
+	client := calc.NewCalculatorClient(conn)
+	firstCallCtx, firstCallCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer firstCallCancel()
+	resp, err := client.Add(firstCallCtx, &calc.AddRequest{A: 1, B: 2})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp.GetResult())
+	}
+
+	srv.GracefulStop()
+	failCtx, failCancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer failCancel()
+	resp2, err := client.Add(failCtx, &calc.AddRequest{A: 1, B: 2}, grpc.WaitForReady(true)) // 等待
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp2.GetResult())
+	}
+
+	ln2, err := net.Listen("tcp", addr)
+	for i := 0; err != nil && i < 20; i++ {
+		time.Sleep(time.Millisecond * 200)
+		ln2, err = net.Listen("tcp", addr)
+	}
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	srv2 := grpc.NewServer()
+	calc.RegisterCalculatorServer(srv2, &calculatorServer{})
+	go func() {
+		err := srv2.Serve(ln2)
+		if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			fmt.Println(err)
+		}
+	}()
+	defer srv2.GracefulStop()
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel2()
+	resp3, err := client.Add(ctx2, &calc.AddRequest{A: 1, B: 2}, grpc.WaitForReady(true))
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(resp3.GetResult())
+	}
+
 }
