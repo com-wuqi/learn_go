@@ -25,6 +25,7 @@ type AddRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	A             int64                  `protobuf:"varint,1,opt,name=a,proto3" json:"a,omitempty"`
 	B             int64                  `protobuf:"varint,2,opt,name=b,proto3" json:"b,omitempty"`
+	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -71,6 +72,13 @@ func (x *AddRequest) GetB() int64 {
 		return x.B
 	}
 	return 0
+}
+
+func (x *AddRequest) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
 }
 
 type AddReply struct {
@@ -217,11 +225,12 @@ var File_calc_calc_proto protoreflect.FileDescriptor
 
 const file_calc_calc_proto_rawDesc = "" +
 	"\n" +
-	"\x0fcalc/calc.proto\x12\x04calc\"(\n" +
+	"\x0fcalc/calc.proto\x12\x04calc\"B\n" +
 	"\n" +
 	"AddRequest\x12\f\n" +
 	"\x01a\x18\x01 \x01(\x03R\x01a\x12\f\n" +
-	"\x01b\x18\x02 \x01(\x03R\x01b\"\"\n" +
+	"\x01b\x18\x02 \x01(\x03R\x01b\x12\x18\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\"\"\n" +
 	"\bAddReply\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\x03R\x06result\"2\n" +
 	"\fRangeRequest\x12\x12\n" +

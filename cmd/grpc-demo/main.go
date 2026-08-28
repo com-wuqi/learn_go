@@ -17,4 +17,8 @@ func main() {
 	review.RunTlsDemo()
 	review.RunKeepaliveDemo()
 	review.RunConnStateDemo()
+	review.RunStreamInterceptorDemo()
+	review.RunSizesDemo()
+	review.RunHealthDemo()
+	review.RunReflectionDemo()
 }
