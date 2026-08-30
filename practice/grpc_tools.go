@@ -16,7 +16,11 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/health"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/reflection/grpc_reflection_v1"
 	"google.golang.org/grpc/stats"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ============================================================
@@ -259,6 +263,70 @@ func RunHealthPractice() {
 // 完整流程参考 review/grpc_reflection.go。
 func RunReflectionPractice() {
 	// TODO
-	//ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	srv := grpc.NewServer()
+	calc.RegisterCalculatorServer(srv, &calculatorServer{})
+	reflection.Register(srv)
+	go func() {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			fmt.Println(err)
+		}
+	}()
+	clientConn, err := grpc.NewClient(ln.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	client := grpc_reflection_v1.NewServerReflectionClient(clientConn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	stream, err := client.ServerReflectionInfo(ctx) // 反射流
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if err = stream.Send(&grpc_reflection_v1.ServerReflectionRequest{
+		MessageRequest: &grpc_reflection_v1.ServerReflectionRequest_ListServices{ListServices: ""},
+	}); err != nil {
+		fmt.Println(err)
+		return
+	}
+	resp, err := stream.Recv()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for _, svc := range resp.GetListServicesResponse().GetService() {
+		fmt.Println("svc:", svc.GetName())
+	}
 
+	if err := stream.Send(&grpc_reflection_v1.ServerReflectionRequest{
+		MessageRequest: &grpc_reflection_v1.ServerReflectionRequest_FileContainingSymbol{FileContainingSymbol: "calc.Calculator"},
+	}); err != nil {
+		fmt.Println("  Send 失败:", err)
+		return
+	}
+	resp, err = stream.Recv()
+	if err != nil {
+		fmt.Println("  Recv 失败:", err)
+		return
+	}
+	fdBytes := resp.GetFileDescriptorResponse().GetFileDescriptorProto()
+	if len(fdBytes) == 0 {
+		return
+	}
+	fd := &descriptorpb.FileDescriptorProto{}
+	if err := proto.Unmarshal(fdBytes[0], fd); err != nil {
+		fmt.Println("  解析文件描述符失败:", err)
+		return
+	}
+	for _, svc := range fd.GetService() {
+		for _, m := range svc.GetMethod() {
+			fmt.Printf("%s (%s) -> (%s)\n", m.GetName(), m.GetInputType(), m.GetOutputType())
+		}
+	}
 }
