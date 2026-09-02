@@ -3,9 +3,10 @@ module LearnGo
 go 1.25.0
 
 require (
+	go.etcd.io/etcd/client/v3 v3.5.33
 	golang.org/x/net v0.58.0
 	golang.org/x/sync v0.22.0
-	google.golang.org/grpc v1.83.0
+	google.golang.org/grpc v1.83.1
 	google.golang.org/protobuf v1.36.12
 )
 
@@ -16,7 +17,6 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.33 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.33 // indirect
-	go.etcd.io/etcd/client/v3 v3.5.33 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
