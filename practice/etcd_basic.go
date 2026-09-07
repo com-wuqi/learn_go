@@ -2,6 +2,8 @@ package practice
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go.etcd.io/etcd/client/v3"
 )
@@ -20,7 +22,12 @@ import (
 // 需要补充 import：time。
 func ConnectEtcd(endpoint string) (*clientv3.Client, error) {
 	// TODO
-	return nil, nil
+	config := clientv3.Config{Endpoints: []string{endpoint}, DialTimeout: 3 * time.Second}
+	cli, err := clientv3.New(config)
+	if err != nil {
+		return nil, err
+	}
+	return cli, nil
 }
 
 // 练习 2：EtcdPutGet
@@ -28,7 +35,19 @@ func ConnectEtcd(endpoint string) (*clientv3.Client, error) {
 // 提示：cli.Put 后再 cli.Get；读取 resp.Kvs[0].Value 并转成 string。
 func EtcdPutGet(ctx context.Context, cli *clientv3.Client, key, value string) (string, error) {
 	// TODO
-	return "", nil
+	_, err := cli.Put(ctx, key, value)
+	if err != nil {
+		return "", err
+	}
+	resp, err := cli.Get(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Kvs) == 0 { // 需要判断
+		return "", nil
+	}
+	val := resp.Kvs[0].Value
+	return string(val), nil
 }
 
 // 练习 3：EtcdListPrefix
@@ -37,7 +56,15 @@ func EtcdPutGet(ctx context.Context, cli *clientv3.Client, key, value string) (s
 // 提示：cli.Get(ctx, prefix, clientv3.WithPrefix())，遍历 resp.Kvs。
 func EtcdListPrefix(ctx context.Context, cli *clientv3.Client, prefix string) (map[string]string, error) {
 	// TODO
-	return nil, nil
+	server := make(map[string]string)
+	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+	for _, kv := range resp.Kvs {
+		server[string(kv.Key)] = string(kv.Value)
+	}
+	return server, nil
 }
 
 // 练习 4：EtcdWatchPrefix
@@ -50,6 +77,22 @@ func EtcdListPrefix(ctx context.Context, cli *clientv3.Client, prefix string) (m
 // 需要补充 import：fmt。
 func EtcdWatchPrefix(ctx context.Context, cli *clientv3.Client, prefix string, ch chan<- string) {
 	// TODO
+	watchCh := cli.Watch(ctx, prefix, clientv3.WithPrefix())
+	go func() {
+		//for {
+		//select {
+		//case resp := <-watchCh:
+		//	for _, ev := range resp.Events {
+		//		ch <- fmt.Sprintf("%s %s %s", ev.Type.String(), ev.Kv.Key, ev.Kv.Value)
+		//	} // 这样在 watchCh 关闭后永远拿不到，循环空转,或者监听 ctx.Done()
+		for resp := range watchCh {
+			for _, ev := range resp.Events {
+				ch <- fmt.Sprintf("%s %s %s", ev.Type.String(), ev.Kv.Key, ev.Kv.Value)
+			}
+		}
+		//}
+		//}
+	}()
 }
 
 // 练习 5：EtcdLeasePut
@@ -59,5 +102,14 @@ func EtcdWatchPrefix(ctx context.Context, cli *clientv3.Client, prefix string, c
 // 写入时加 clientv3.WithLease(leaseResp.ID)。
 func EtcdLeasePut(ctx context.Context, cli *clientv3.Client, key, value string, ttl int64) (clientv3.LeaseID, error) {
 	// TODO
-	return 0, nil
+	leaseResp, err := cli.Grant(ctx, ttl)
+	if err != nil {
+		return 0, err
+	}
+	_, err = cli.Put(ctx, key, value, clientv3.WithLease(leaseResp.ID))
+	if err != nil {
+		_, _ = cli.Revoke(ctx, leaseResp.ID)
+		return 0, err
+	}
+	return leaseResp.ID, nil
 }
