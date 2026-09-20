@@ -18,4 +18,10 @@
 > - Lease 是"心跳"：KeepAlive 续租保持存活，租约过期/Revoke 时绑定 key 自动删除（实例下线自愈）
 > - clientv3.New 需显式 DialTimeout；连接本身是 lazy 的，第一个 RPC 才真正拨号
 
+> 依赖说明（2026-09-20）：go.mod 里的 `github.com/golang/protobuf v1.5.4 // indirect` 无法移除——本项目代码零引用旧包
+> （`api/` 生成代码、`practice/`、`review/` 全部用 `google.golang.org/protobuf`），但 etcd client v3 自身仍 import 它
+> （`client/v3/kv.go`、`api/v3/etcdserverpb` 等），换到最新 v3.8.0-alpha.0 也一样（上游标注 TODO: remove for a supported
+> version）。
+> 该模块现在只是转发到 `google.golang.org/protobuf` 的兼容 shim，留在 go.mod 属正常现象，不是本项目漏改。
+
 > 下一步（3.3-C）：服务注册设计——实例 key 生成、lease + KeepAlive（ctx 生命周期）、优雅注销（Revoke/Close）。

@@ -18,7 +18,7 @@
     - `protoc` 35.1（/home/composer/go/bin/protoc）
     - `protoc-gen-go` 1.36.12
     - `protoc-gen-go-grpc` 1.6.2
-- go.mod 依赖：`google.golang.org/grpc v1.83.0`、`google.golang.org/protobuf v1.36.12` 已 tidy 为直接依赖
+- go.mod 依赖：`google.golang.org/grpc v1.84.0`、`google.golang.org/protobuf v1.36.12` 已 tidy 为直接依赖
 - 注意：`/home/composer/go/bin` 不在默认 PATH，运行 protoc 前需 `export PATH=$PATH:/home/composer/go/bin` 或使用全路径
 - 建议练习（由浅入深）：
     - [x] 3.2-A：定义 `.proto`，生成 Go 代码
