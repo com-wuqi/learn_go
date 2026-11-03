@@ -2,6 +2,7 @@ package practice
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"strings"
@@ -51,10 +52,8 @@ func ServicePrefix(service string) string {
 func LoadServiceSnapshot(ctx context.Context, cli *clientv3.Client, service string) (map[string]string, int64, error) {
 	// TODO
 	key := ServicePrefix(service)
-	ctx2, cancel2 := context.WithCancel(ctx)
-	defer cancel2()
 	aMap := make(map[string]string)
-	resp, err := cli.Get(ctx2, key, clientv3.WithPrefix())
+	resp, err := cli.Get(ctx, key, clientv3.WithPrefix())
 	if err != nil {
 		return aMap, 0, err
 	}
@@ -194,10 +193,10 @@ func NewServiceDiscovery(ctx context.Context, cli *clientv3.Client, service stri
 //   - errors 建议 buffered + 非阻塞发送，防止无人消费时卡死发现器
 func (d *ServiceDiscovery) run(startRevision int64) {
 	// TODO
-	defer close(d.done)
-	defer close(d.errors)
-	defer d.closeSubscribers()
-	revision := startRevision // 下一次使用的
+	defer close(d.done)        // 通知 Close()
+	defer close(d.errors)      // 错误
+	defer d.closeSubscribers() // 关闭 Subscribers
+	revision := startRevision  // 下一次使用的
 	needToResync := false
 	for {
 		if needToResync {
@@ -220,8 +219,8 @@ func (d *ServiceDiscovery) run(startRevision int64) {
 			d.instances = insMap
 			d.revision = newRevision
 			d.mu.Unlock()
-			d.notifySubscribers()
-			newRevision += 1 // 锁外固定revision为接下来watch的
+			d.notifySubscribers() // 重建后通知
+			newRevision += 1      // 锁外固定revision为接下来watch的
 			revision = newRevision
 			needToResync = false
 			continue
@@ -243,7 +242,7 @@ func (d *ServiceDiscovery) run(startRevision int64) {
 				d.mu.Unlock()
 			}
 			if len(resp.Events) > 0 {
-				d.notifySubscribers()
+				d.notifySubscribers() // 存在事件通知
 			}
 			if resp.Header != nil {
 				d.mu.Lock()
@@ -268,24 +267,75 @@ func (d *ServiceDiscovery) reportError(err error) {
 	}
 }
 
+// ErrDiscoveryClosed Discovery 被关闭后尝试注册服务发现状态变更
+var ErrDiscoveryClosed = errors.New("service discovery is closed")
+
 // Subscribe 注册服务发现状态变更。
 // 提示：先注册 subscriber，再读取初始快照，可避免两次操作之间漏掉通知；
 // 这段时间内收到的一次额外通知是无害的。不要同时持有 d.mu 和 d.subMu。
-func (d *ServiceDiscovery) Subscribe() *DiscoverySubscription {
+func (d *ServiceDiscovery) Subscribe() (*DiscoverySubscription, error) {
 	// TODO
-	return nil
+	// 注册
+	d.subMu.Lock()
+	if d.closed || d.runCtx.Err() != nil {
+		// closed 或者 runCtx 已经结束
+		d.subMu.Unlock()
+		return nil, ErrDiscoveryClosed
+	}
+	updates := make(chan struct{}, 1)
+	d.subscribers[updates] = struct{}{}
+	d.subMu.Unlock()
+
+	// 数据
+	d.mu.RLock()
+	instances := make(map[string]string)
+	maps.Copy(instances, d.instances)
+	revision := d.revision
+	d.mu.RUnlock()
+
+	cancel := func() {
+		d.subMu.Lock()
+		defer d.subMu.Unlock()
+		if _, ok := d.subscribers[updates]; !ok {
+			return
+		}
+		delete(d.subscribers, updates)
+		close(updates)
+	}
+	return &DiscoverySubscription{
+		Instances: instances,
+		Revision:  revision,
+		Updates:   updates,
+		Cancel:    cancel,
+	}, nil
 }
 
 // notifySubscribers 向所有订阅者发送“状态可能变化”信号。
 // 提示：每个 channel 都使用非阻塞发送；同一订阅已经有未消费信号时直接合并。
 func (d *ServiceDiscovery) notifySubscribers() {
 	// TODO
+	// 需要加锁，回收会删除条目
+	d.subMu.Lock()
+	defer d.subMu.Unlock()
+	for update := range d.subscribers {
+		select {
+		case update <- struct{}{}:
+		default:
+		}
+	}
 }
 
 // closeSubscribers 在发现器退出时关闭并清空所有订阅。
 // 提示：关闭 channel 和标记 closed 必须在同一把锁内完成。
 func (d *ServiceDiscovery) closeSubscribers() {
 	// TODO
+	d.subMu.Lock()
+	defer d.subMu.Unlock()
+	d.closed = true // 关闭标记
+	for update := range d.subscribers {
+		close(update)
+		delete(d.subscribers, update)
+	}
 }
 
 // Instances 返回当前实例表的副本，调用方可以安全修改返回值。
@@ -335,3 +385,4 @@ func (d *ServiceDiscovery) Close() {
 //   - context 取消/Close 后后台 goroutine 正常退出，Close 可重复调用
 //   - Watch 因 compression 取消后能通过重同步恢复到最新状态
 // ------------------------------------------------------------
+// ETCD_ENDPOINT=127.0.0.1:2379 go test ./practice -run EtcdDiscoverySubscription -v
