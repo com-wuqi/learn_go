@@ -55,6 +55,11 @@
 - `practice/grpc_tools.go` — 3.2-S 批3 练习（流式拦截器/压缩/health/反射）
 - `cmd/grpc-demo/` — gRPC 演示快捷运行：`go run cmd/grpc-demo/main.go`
 - `review/etcd_basic.go` / `cmd/etcd-demo/` — 3.3-B etcd 基础演示：`go run cmd/etcd-demo/main.go`
+- `review/etcd_discover.go` — 3.3-D 服务发现演示（快照 / Watch 增量维护 / 压缩重同步；仅用于学习 etcd）
+- `practice/etcd_register.go` — 3.3-C 练习（服务注册：key 生成 / 注册 / 心跳 / 优雅注销 / 组合注册器）
+- `practice/etcd_discover.go` — 3.3-D 练习（服务发现：一致性快照 / Watch 增量维护 / 故障重同步）
+- `practice/etcd_discover_test.go` — 3.3-D 稳定验收测试；设置 `ETCD_ENDPOINT=127.0.0.1:2379` 运行集成部分
+- `practice/etcd_subscribe_test.go` — 3.3-E1 服务发现订阅验收测试
 - `practice/etcd_basic.go` — 3.3-B 练习（Go client v3
   基础，已完成：ConnectEtcd/EtcdPutGet/EtcdListPrefix/EtcdWatchPrefix/EtcdLeasePut）
 - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
@@ -62,4 +67,6 @@
 ## 运行方式
 
 - `go run cmd/part3/main.go` — 运行第三阶段知识演示
+  - `go run cmd/etcd-demo/main.go` — 运行 etcd 基础 + 服务发现演示
     - 练习验证：直接 `go build ./practice/...` 检查编译
+  - 验收测试：`ETCD_ENDPOINT=127.0.0.1:2379 go test ./practice -run EtcdDiscovery -v`

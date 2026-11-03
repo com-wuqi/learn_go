@@ -4,4 +4,5 @@ import "LearnGo/review"
 
 func main() {
 	review.RunEtcdBasicDemo()
+	review.RunEtcdDiscoverDemo()
 }

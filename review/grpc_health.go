@@ -2,6 +2,7 @@ package review
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -32,7 +33,7 @@ func RunHealthDemo() {
 	demo.RegisterGreeterServer(srv, &greeterServer{})
 	healthpb.RegisterHealthServer(srv, hs)
 	go func() {
-		if err := srv.Serve(ln); err != nil && err != grpc.ErrServerStopped {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			fmt.Println("  Serve 异常退出:", err)
 		}
 	}()
