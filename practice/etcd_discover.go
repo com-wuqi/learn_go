@@ -197,7 +197,7 @@ func (d *ServiceDiscovery) run(startRevision int64) {
 	defer close(d.errors)      // 错误
 	defer d.closeSubscribers() // 关闭 Subscribers
 	revision := startRevision  // 下一次使用的
-	needToResync := false
+	needToResync := false      // 需要全量同步
 	for {
 		if needToResync {
 			insMap, newRevision, err := LoadServiceSnapshot(d.runCtx, d.cli, d.service)

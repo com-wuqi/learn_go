@@ -11,7 +11,7 @@
 - [x] 3.3-C：服务注册（lease 注册 + KeepAlive 自动续约 + 优雅注销）— practice/etcd_register.go（2026-10-16 检查通过）
 - [x] 3.3-D：服务发现（Watch 维护本地实例列表 + 故障容错）— practice/etcd_discover.go（2026-11-03 验收通过）
 - [ ] 3.3-E：综合——多副本 gRPC 服务注册到 etcd，客户端经 etcd 发现并调用
-  - [ ] 3.3-E1：ServiceDiscovery 订阅契约（初始快照 + 变更通知 + 取消/关闭）
+    - [x] 3.3-E1：ServiceDiscovery 订阅契约（初始快照 + 变更通知 + 取消/关闭）— 2026-11-03 验收通过
   - [ ] 3.3-E2：etcd-backed gRPC resolver（初始地址 + 动态更新）
   - [ ] 3.3-E3：多副本注册、round_robin 调用与下线故障切换
 
@@ -53,9 +53,19 @@
 > - 客户端：round_robin 调用两个副本；停止一个副本并注销后，已知地址逐步移除，剩余副本继续服务
 > - 测试：先写 resolver 的无网络单元测试和 etcd/gRPC 集成测试，再建立练习骨架；实现细节不写进题目
 
-> 3.3-E1 已建立契约与验收（2026-11-03，待实现）：
+> 3.3-E1 关键结论（2026-11-03 验收通过）：
 > - `Subscribe` 返回独立实例快照、revision 和只读更新信号；发现器已关闭时返回 `nil, ErrDiscoveryClosed`
 > - 订阅使用 buffered=1 + 合并通知；消费者收到信号后重新读取 `Instances`
 > - 取消订阅幂等且不影响发现器；发现器退出时关闭全部订阅
 > - 先注册订阅再读快照，允许额外一次无害通知，但禁止漏事件
+> - subscriber map、取消、通知和整体关闭必须统一受 `subMu` 保护；race detector 必须通过
 > - 测试：`practice/etcd_subscribe_test.go`
+
+> 3.3-E2 契约（2026-11-03，练习待实现）：
+> - target 固定为 `etcd:///<service>`；resolver scheme 为 `etcd`，service 为裸服务名且非空
+> - Builder 不拥有 etcd client；每个 resolver 创建并拥有一个 ServiceDiscovery
+> - Build 必须同步发布初始完整地址集合；之后每次通知都发布新的完整列表，不做增量合并
+> - 地址集合按 `Addr` 稳定排序并去重，保证测试和日志可重复
+> - discovery 后台错误通过 `ClientConn.ReportError` 转发；正常关闭不报告错误
+> - `ResolveNow` 只触发一次立即重读，可合并；`Close` 幂等，取消订阅、关闭发现器并等待后台退出
+> - 测试：`practice/etcd_resolver_test.go`

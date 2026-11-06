@@ -60,6 +60,8 @@
 - `practice/etcd_discover.go` — 3.3-D 练习（服务发现：一致性快照 / Watch 增量维护 / 故障重同步）
 - `practice/etcd_discover_test.go` — 3.3-D 稳定验收测试；设置 `ETCD_ENDPOINT=127.0.0.1:2379` 运行集成部分
 - `practice/etcd_subscribe_test.go` — 3.3-E1 服务发现订阅验收测试
+- `practice/etcd_resolver.go` — 3.3-E2 etcd-backed gRPC resolver 练习
+- `practice/etcd_resolver_test.go` — 3.3-E2 resolver 验收测试
 - `practice/etcd_basic.go` — 3.3-B 练习（Go client v3
   基础，已完成：ConnectEtcd/EtcdPutGet/EtcdListPrefix/EtcdWatchPrefix/EtcdLeasePut）
 - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示

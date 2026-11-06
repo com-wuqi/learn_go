@@ -178,6 +178,7 @@ func TestEtcdDiscoveryNotifyConcurrentCancel(t *testing.T) {
 		instances:   map[string]string{"instance-1": "127.0.0.1:9001"},
 		revision:    1,
 		subscribers: make(map[chan struct{}]struct{}),
+		runCtx:      context.Background(),
 	}
 	subscription, err := d.Subscribe()
 	if err != nil {
