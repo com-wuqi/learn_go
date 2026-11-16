@@ -12,8 +12,11 @@
 - [x] 3.3-D：服务发现（Watch 维护本地实例列表 + 故障容错）— practice/etcd_discover.go（2026-11-03 验收通过）
 - [ ] 3.3-E：综合——多副本 gRPC 服务注册到 etcd，客户端经 etcd 发现并调用
     - [x] 3.3-E1：ServiceDiscovery 订阅契约（初始快照 + 变更通知 + 取消/关闭）— 2026-11-03 验收通过
-  - [ ] 3.3-E2：etcd-backed gRPC resolver（初始地址 + 动态更新）
+    - [x] 3.3-E2：etcd-backed gRPC resolver（初始地址 + 动态更新）— 2026-11-13 验收通过
+    - [ ] 3.3-R：3.3 综合复习（概念、代码路线、实验、口述验收）— E3A 前置
   - [ ] 3.3-E3：多副本注册、round_robin 调用与下线故障切换
+      - [ ] 3.3-E3A：单副本 gRPC 服务注册、可调用、幂等注销
+      - [ ] 3.3-E3B：客户端经 etcd resolver round_robin 调用与副本下线切换
 
 > 3.3-B 关键结论（2026-08-30 沉淀）：
 > - key 组织：`/services/<服务名>/<实例ID>` -> 地址，前缀查询即"发现该服务的所有实例"
@@ -61,11 +64,26 @@
 > - subscriber map、取消、通知和整体关闭必须统一受 `subMu` 保护；race detector 必须通过
 > - 测试：`practice/etcd_subscribe_test.go`
 
-> 3.3-E2 契约（2026-11-03，练习待实现）：
+> 3.3-E2 关键结论（2026-11-13 验收通过）：
 > - target 固定为 `etcd:///<service>`；resolver scheme 为 `etcd`，service 为裸服务名且非空
 > - Builder 不拥有 etcd client；每个 resolver 创建并拥有一个 ServiceDiscovery
 > - Build 必须同步发布初始完整地址集合；之后每次通知都发布新的完整列表，不做增量合并
 > - 地址集合按 `Addr` 稳定排序并去重，保证测试和日志可重复
 > - discovery 后台错误通过 `ClientConn.ReportError` 转发；正常关闭不报告错误
 > - `ResolveNow` 只触发一次立即重读，可合并；`Close` 幂等，取消订阅、关闭发现器并等待后台退出
+> - resolver.Close 必须调用自己持有的 subscription.Cancel，再 Close discovery；不能越过所有权直接操作内部 subscriber map
 > - 测试：`practice/etcd_resolver_test.go`
+
+> 3.3-E3A 契约（2026-11-13，练习待实现）：
+> - 启动一个监听 `127.0.0.1:0` 的 Greeter gRPC server，并返回实际监听地址
+> - 注册复用 RegisterServiceWithHeartbeat；etcd value 必须是实际 gRPC 地址
+> - 启动完成后，既可直接通过 Address 调用，也能在 etcd 查到该实例
+> - Stop 必须先撤销注册/租约，再停止 gRPC server；返回注册注销与服务器清理错误
+> - Stop 幂等并等待心跳注销完成；失败路径必须清理监听器和 server
+> - 测试：`practice/etcd_grpc_replica_test.go`
+
+> 3.3-R 复习闸门（2026-11-13 开始）：
+> - 不新增功能练习，先把注册、发现、订阅、resolver 的生命周期连成完整因果链
+> - 复习材料：`docs/review-3.3.md`
+> - 通过标准：能不看答案解释 revision+1、压缩恢复、错误回压、订阅关闭和资源所有权，并完成实验记录
+> - 复习通过后再回到 E3A；当前 E3A 骨架保留但暂不继续实现

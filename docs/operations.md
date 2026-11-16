@@ -62,6 +62,9 @@
 - `practice/etcd_subscribe_test.go` — 3.3-E1 服务发现订阅验收测试
 - `practice/etcd_resolver.go` — 3.3-E2 etcd-backed gRPC resolver 练习
 - `practice/etcd_resolver_test.go` — 3.3-E2 resolver 验收测试
+- `practice/etcd_grpc_replica.go` — 3.3-E3A 注册式 gRPC 副本练习
+- `practice/etcd_grpc_replica_test.go` — 3.3-E3A 副本生命周期验收测试
+- `docs/review-3.3.md` — 3.3-R 系统复习与口述验收
 - `practice/etcd_basic.go` — 3.3-B 练习（Go client v3
   基础，已完成：ConnectEtcd/EtcdPutGet/EtcdListPrefix/EtcdWatchPrefix/EtcdLeasePut）
 - `cmd/part1/` / `cmd/part2/` / `cmd/part3/` — 按阶段运行演示
